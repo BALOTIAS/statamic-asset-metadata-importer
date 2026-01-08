@@ -155,16 +155,15 @@ apt-get install libimage-exiftool-perl
 **Windows:**  
 Download from [exiftool.org](https://exiftool.org/) and extract to a directory.
 
+Copy the path to the `exiftool` binary. 
+```bash
+which exiftool
+```
+
 Then configure the path in your `.env` file:
 
 ```env
-ASSET_METADATA_IMPORTER_EXIFTOOL_PATH=/usr/local/bin/exiftool
-```
-
-Or directly in the config file:
-
-```php
-'exiftool_path' => '/usr/local/bin/exiftool',
+ASSET_METADATA_IMPORTER_EXIFTOOL_PATH=/usr/bin/exiftool
 ```
 
 Once configured, you can add more extensions:
