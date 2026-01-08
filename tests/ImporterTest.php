@@ -297,6 +297,164 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
+
+    public function test_it_handles_local_assets_without_temp_download(): void
+    {
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'local.jpg');
+
+        // Verify the file exists locally (this is what triggers local path)
+        $this->assertTrue(file_exists($asset->resolvedPath()));
+
+        // Constructor automatically reads metadata from local file
+        $importer = new Importer($asset);
+
+        // If we get here without errors, local file was read successfully
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+
+    public function test_it_downloads_remote_assets_temporarily(): void
+    {
+        // Create a mock asset that simulates remote storage
+        $container = $this->createAssetContainer();
+
+        // Create asset but don't create the physical file
+        // This simulates a remote asset where resolvedPath doesn't exist locally
+        $asset = $this->getMockBuilder(\Statamic\Assets\Asset::class)
+            ->onlyMethods(['resolvedPath', 'stream', 'path', 'container', 'id', 'saveQuietly'])
+            ->getMock();
+
+        // Make resolvedPath return a non-existent path (simulating remote storage)
+        $asset->method('resolvedPath')
+            ->willReturn('/nonexistent/path/remote.jpg');
+
+        $asset->method('path')
+            ->willReturn('remote.jpg');
+
+        $asset->method('id')
+            ->willReturn('test-asset-id');
+
+        $asset->method('container')
+            ->willReturn($container);
+
+        // Track how many times stream() is called to verify it's used for remote assets
+        $streamCallCount = 0;
+
+        $asset->method('stream')
+            ->willReturnCallback(function () use (&$streamCallCount) {
+                $streamCallCount++;
+                // Create a fake image stream
+                $stream = fopen('php://memory', 'r+');
+                fwrite($stream, 'fake remote image content');
+                rewind($stream);
+                return $stream;
+            });
+
+        // Constructor should handle remote asset by creating temp file
+        $importer = new Importer($asset);
+
+        // Verify that stream() was called (indicating remote download was attempted)
+        $this->assertGreaterThan(0, $streamCallCount,
+            'stream() should be called for remote assets to download them temporarily');
+
+        // If we get here without errors, the remote download logic worked
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+
+    public function test_it_cleans_up_temporary_files_after_processing(): void
+    {
+        // Create a mock asset that simulates remote storage
+        $container = $this->createAssetContainer();
+
+        $asset = $this->getMockBuilder(\Statamic\Assets\Asset::class)
+            ->onlyMethods(['resolvedPath', 'stream', 'path', 'container', 'id', 'saveQuietly'])
+            ->getMock();
+
+        $asset->method('resolvedPath')
+            ->willReturn('/nonexistent/path/remote.jpg');
+
+        $asset->method('path')
+            ->willReturn('remote.jpg');
+
+        $asset->method('id')
+            ->willReturn('test-asset-id');
+
+        $asset->method('container')
+            ->willReturn($container);
+
+        // Track if stream is called
+        $streamCalled = false;
+        $asset->method('stream')
+            ->willReturnCallback(function () use (&$streamCalled) {
+                $streamCalled = true;
+                $stream = fopen('php://memory', 'r+');
+                fwrite($stream, 'fake remote image content');
+                rewind($stream);
+                return $stream;
+            });
+
+        // Get initial temp directory count
+        $tempBasePath = sys_get_temp_dir();
+        $tempDirsBefore = glob($tempBasePath . '/temporary_directory_*');
+        $countBefore = count($tempDirsBefore);
+
+        // Process the remote asset in a scope
+        (function() use ($asset) {
+            new Importer($asset);
+        })();
+
+        // Verify stream was called (remote download happened)
+        $this->assertTrue($streamCalled, 'stream() should be called for remote assets');
+
+        // Force garbage collection to ensure TemporaryDirectory destructor runs
+        gc_collect_cycles();
+
+        // Give it a moment for cleanup
+        usleep(10000); // 10ms
+
+        // Check that temp directories are cleaned up
+        $tempDirsAfter = glob($tempBasePath . '/temporary_directory_*');
+        $countAfter = count($tempDirsAfter);
+
+        // The count should be the same or less (temp dirs should be auto-deleted)
+        $this->assertLessThanOrEqual($countBefore, $countAfter,
+            'Temporary directories should be cleaned up after processing');
+    }
+
+
+    public function test_it_handles_streaming_failures_gracefully(): void
+    {
+        $this->expectException(\RuntimeException::class);
+
+        // Create a mock asset that simulates remote storage with failing stream
+        $container = $this->createAssetContainer();
+
+        $asset = $this->getMockBuilder(\Statamic\Assets\Asset::class)
+            ->onlyMethods(['resolvedPath', 'stream', 'path', 'container', 'id', 'saveQuietly'])
+            ->getMock();
+
+        $asset->method('resolvedPath')
+            ->willReturn('/nonexistent/path/remote.jpg');
+
+        $asset->method('path')
+            ->willReturn('remote.jpg');
+
+        $asset->method('id')
+            ->willReturn('test-asset-id');
+
+        $asset->method('container')
+            ->willReturn($container);
+
+        // Make stream() throw an exception to simulate a failure
+        $asset->method('stream')
+            ->willThrowException(new \RuntimeException('Failed to stream remote asset'));
+
+        // Constructor should throw the exception when trying to download
+        new Importer($asset);
+    }
+
     protected function createAssetContainer()
     {
         $container = AssetContainer::make('assets')
