@@ -77,7 +77,7 @@ return [
     |
      */
 
-    'exiftool_path' => env('ASSET_METADATA_EXIFTOOL_PATH', null), // e.g. '/usr/local/bin/exiftool', 'C:\\exiftool\\exiftool.exe'
+    'exiftool_path' => env('ASSET_METADATA_IMPORTER_EXIFTOOL_PATH', null), // e.g. '/usr/local/bin/exiftool', 'C:\\exiftool\\exiftool.exe'
 
     /*
     |--------------------------------------------------------------------------

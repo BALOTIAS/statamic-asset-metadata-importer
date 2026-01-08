@@ -121,7 +121,7 @@ Download from [exiftool.org](https://exiftool.org/) and extract to a directory.
 Then configure the path in your `.env` file:
 
 ```env
-ASSET_METADATA_EXIFTOOL_PATH=/usr/local/bin/exiftool
+ASSET_METADATA_IMPORTER_EXIFTOOL_PATH=/usr/local/bin/exiftool
 ```
 
 Or directly in the config file:
