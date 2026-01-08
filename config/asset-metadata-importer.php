@@ -38,6 +38,23 @@ return [
     ],
 
     /*
+    | --------------------------------------------------------------------------
+    | Loose Mapping
+    | --------------------------------------------------------------------------
+    |
+    | When enabled, the importer will attempt to map fields even if the exact
+    | field handle does not exist in the asset container blueprint. This can be useful
+    | for more flexible setups, but may lead to unexpected results.
+    |
+    | Fields example: 'credit' => ['credit', 'd']
+    |  This would map 'credit' exactly first, but if not found,
+    |  it would look for any metadata key containing 'credit' (e.g. XMP-photoshop:Credit) and then for any key containing 'd'.
+    |
+    */
+
+    'loose_mapping' => false,
+
+    /*
     |--------------------------------------------------------------------------
     | Overwrite on Re-upload
     |--------------------------------------------------------------------------

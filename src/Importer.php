@@ -111,7 +111,38 @@ class Importer
 
     private function getValueBySource(string $source): ?string
     {
-        return data_get($this->metadata['data'], $source) ?? data_get($this->metadata['rawData'], $source);
+        // Try exact match first
+        $value = data_get($this->metadata['data'], $source) ?? data_get($this->metadata['rawData'], $source);
+
+        if ($value) {
+            return $value;
+        }
+
+        // If loose mapping is enabled and no exact match, try partial match
+        if (config('statamic.asset-metadata-importer.loose_mapping', false)) {
+            $value = $this->getValueByLooseMatch($source);
+        }
+
+        return $value;
+    }
+
+    private function getValueByLooseMatch(string $source): ?string
+    {
+        // Search in data array
+        foreach ($this->metadata['data'] as $key => $value) {
+            if (str_contains(mb_strtolower($key), mb_strtolower($source))) {
+                return $value;
+            }
+        }
+
+        // Search in rawData array
+        foreach ($this->metadata['rawData'] as $key => $value) {
+            if (str_contains(mb_strtolower($key), mb_strtolower($source))) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     public function save(): void

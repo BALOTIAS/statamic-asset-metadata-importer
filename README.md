@@ -14,6 +14,7 @@ Managing image metadata manually can be time-consuming and error-prone. Professi
 - **Automatic metadata extraction** on asset upload and re-upload
 - **Flexible field mapping** - Map any asset field to EXIF/IPTC metadata tags
 - **Multiple metadata sources** - Define fallback sources for each field
+- **Loose mapping mode** - Partial matching for flexible metadata extraction
 - **Queue support** - Process metadata import asynchronously for better performance
 - **Exiftool integration** - Support for PNG, WEBP, AVIF and many more formats
 - **Local and cloud storage** - Works with both local filesystems and remote storage (S3, etc.)
@@ -73,6 +74,42 @@ You can map fields in two ways:
 ```
 
 When using multiple sources, the addon will try each one in order and use the first value it finds.
+
+### Loose Mapping
+
+By default, the addon requires exact matches between your configured field sources and the metadata keys. However, you can enable **loose mapping** for more flexible matching:
+
+```php
+'loose_mapping' => true,
+```
+
+When loose mapping is enabled:
+
+1. **Exact matches are tried first** - The addon always attempts to find exact matches before using loose matching
+2. **Partial matches as fallback** - If no exact match is found, it searches for metadata keys that *contain* your search string (case-insensitive)
+3. **Works with multiple sources** - Each source in your array is tried in order, using both exact and loose matching
+
+**Example:**
+
+```php
+'fields' => [
+    'credit' => ['credit', 'photoshop'],
+],
+'loose_mapping' => true,
+```
+
+With loose mapping enabled:
+- First tries to find `credit` exactly
+- If not found, searches for any key containing "credit" (e.g., `XMP-photoshop:Credit`, `IPTC:Credit`)
+- Then tries `photoshop` exactly
+- If not found, searches for any key containing "photoshop" (e.g., `XMP-photoshop:Copyright`)
+
+**Use case:** This is particularly useful when:
+- You want to capture metadata from various XMP/IPTC namespaces without knowing the exact tag names
+- Different image sources use slightly different metadata structures
+- You want more forgiving metadata extraction without specifying every possible variant
+
+**Note:** While loose mapping provides flexibility, it may lead to unexpected results if your search terms are too generic (e.g., searching for "d" would match many keys). Always test with your actual images to ensure the desired metadata is being extracted.
 
 ### Available Metadata Tags
 
@@ -139,6 +176,11 @@ Once configured, you can add more extensions:
 ```
 
 ### Additional Options
+
+**Loose mapping:**
+```php
+'loose_mapping' => false, // Set to true for partial/fuzzy metadata key matching
+```
 
 **Overwrite on re-upload:**
 ```php

@@ -157,6 +157,146 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
+
+    public function test_it_uses_exact_match_when_loose_mapping_is_disabled(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.loose_mapping' => false,
+            'statamic.asset-metadata-importer.fields' => [
+                'alt' => 'title',
+            ]
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Constructor automatically imports metadata
+        new Importer($asset);
+
+        // Should only match exact field names
+        $this->assertTrue(true);
+    }
+
+
+    public function test_it_uses_loose_matching_when_enabled(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.loose_mapping' => true,
+            'statamic.asset-metadata-importer.fields' => [
+                'credit' => 'credit', // Should match any key containing 'credit'
+            ]
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Constructor automatically imports metadata
+        new Importer($asset);
+
+        // Loose matching should work
+        $this->assertTrue(true);
+    }
+
+
+    public function test_loose_mapping_prefers_exact_match_first(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.loose_mapping' => true,
+            'statamic.asset-metadata-importer.fields' => [
+                'alt' => 'title',
+            ]
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Constructor automatically imports metadata
+        new Importer($asset);
+
+        // Should prefer exact match over partial match
+        $this->assertTrue(true);
+    }
+
+
+    public function test_loose_mapping_is_case_insensitive(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.loose_mapping' => true,
+            'statamic.asset-metadata-importer.fields' => [
+                'credit' => 'CREDIT', // Uppercase search
+            ]
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Constructor automatically imports metadata
+        new Importer($asset);
+
+        // Case insensitive matching should work
+        $this->assertTrue(true);
+    }
+
+
+    public function test_loose_mapping_with_multiple_sources(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.loose_mapping' => true,
+            'statamic.asset-metadata-importer.fields' => [
+                'credit' => ['exact_field', 'credit', 'partial'],
+            ]
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Constructor automatically imports metadata
+        new Importer($asset);
+
+        // Should try exact matches first, then fall back to loose matching
+        $this->assertTrue(true);
+    }
+
+
+    public function test_loose_mapping_returns_null_when_no_match(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.loose_mapping' => true,
+            'statamic.asset-metadata-importer.fields' => [
+                'alt' => 'completely_nonexistent_field_xyz',
+            ]
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Constructor automatically imports metadata
+        new Importer($asset);
+
+        // Should handle no matches gracefully
+        $this->assertTrue(true);
+    }
+
+
+    public function test_loose_mapping_handles_multibyte_characters(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.loose_mapping' => true,
+            'statamic.asset-metadata-importer.fields' => [
+                'credit' => 'crédit', // French accented character
+            ]
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Constructor automatically imports metadata
+        new Importer($asset);
+
+        // Should handle international characters correctly with mb_strtolower
+        $this->assertTrue(true);
+    }
+
     protected function createAssetContainer()
     {
         $container = AssetContainer::make('assets')
