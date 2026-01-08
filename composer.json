@@ -1,0 +1,47 @@
+{
+    "name": "balotias/statamic-asset-metadata-importer",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Matthias Balota",
+            "homepage": "https://github.com/balotias",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Balotias\\StatamicAssetMetadataImporter\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Balotias\\StatamicAssetMetadataImporter\\Tests\\": "tests"
+        }
+    },
+    "require": {
+        "statamic/cms": "^5.0",
+        "miljar/php-exif": "^0.6.5",
+        "spatie/temporary-directory": "^2.3"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Asset Metadata Importer",
+            "description": "A Statamic addon to import metadata on asset upload using php-exif."
+        },
+        "laravel": {
+            "providers": [
+                "Balotias\\StatamicAssetMetadataImporter\\ServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

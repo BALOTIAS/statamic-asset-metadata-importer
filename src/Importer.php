@@ -1,0 +1,140 @@
+<?php
+
+namespace Balotias\StatamicAssetMetadataImporter;
+
+use Illuminate\Support\Facades\Log;
+use Statamic\Assets\Asset;
+use Spatie\TemporaryDirectory\TemporaryDirectory;
+use PHPExif\Adapter\Exiftool as ExiftoolAdapter;
+use PHPExif\Reader\Reader as MetadataReader;
+
+class Importer
+{
+    protected array $metadata = [
+        'data' => [],
+        'rawData' => [],
+    ];
+
+    protected bool $hasDirtyData = false;
+
+    public function __construct(public Asset $asset) {
+        $this->readMetadata();
+        $this->mapToAssetField();
+        $this->save();
+    }
+
+
+    public function readMetadata(): void
+    {
+        $path = $this->asset->path();
+        $resolvedPath = $this->asset->resolvedPath();
+
+        // For local files, use the resolved path directly
+        if (file_exists($resolvedPath)) {
+            $filePath = $resolvedPath;
+        } else {
+            // For remote disks (S3, etc), create a temporary directory and download the file - will be deleted automatically
+            $resource = $this->asset->stream();
+            $tempDirectory = (new TemporaryDirectory())->deleteWhenDestroyed()->create();
+            $tempPath = $tempDirectory->path(basename($path));
+
+            // Copy the stream resource to the temporary file
+            $tempFile = fopen($tempPath, 'w');
+            stream_copy_to_stream($resource, $tempFile);
+            fclose($tempFile);
+            fclose($resource);
+
+            $filePath = $tempPath;
+        }
+
+        // Read metadata from the file
+        $this->metadata = $this->readFileMetadata($filePath);
+        $this->log('Metadata read', $this->metadata);
+    }
+
+    private function readFileMetadata(string $filePath): array
+    {
+        if (config('statamic.metadata-importer.exiftool_path')) {
+            $adapter = new ExiftoolAdapter(['toolPath'  => config('statamic.metadata-importer.exiftool_path')]);
+            $reader = new MetadataReader($adapter);
+        } else {
+            $reader = MetadataReader::factory(MetadataReader::TYPE_NATIVE);
+        }
+
+        $exifMetadata = $reader->read($filePath);
+        // If no metadata found, return empty arrays - prevents errors, indicating no metadata or unsupported file type
+        if (!$exifMetadata) {
+            $this->log('Metadata not found or unsupported file type!', $filePath);
+            return [
+                'data' => [],
+                'rawData' => [],
+            ];
+        }
+
+        return [
+            'data' => $exifMetadata->getData(),
+            'rawData' => $exifMetadata->getRawData(),
+        ];
+    }
+
+    public function mapToAssetField(): void
+    {
+        $blueprint = $this->asset->container->blueprint();
+
+        foreach (config('statamic.metadata-importer.fields', []) as $field => $sources) {
+            if (!$blueprint->hasField($field)) {
+                continue;
+            }
+
+            $value = $this->getValueBySources($sources);
+            if ($value) {
+                $this->asset->set($field, $value);
+                $this->hasDirtyData = true;
+            }
+        }
+    }
+
+    private function getValueBySources(string|array $sources): ?string
+    {
+        $sources = is_array($sources) ? $sources : explode(',', $sources);
+
+        foreach ($sources as $source) {
+            $value = $this->getValueBySource(str($source)->trim());
+
+            if ($value) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function getValueBySource(string $source): ?string
+    {
+        return data_get($this->metadata['data'], $source) ?? data_get($this->metadata['rawData'], $source);
+    }
+
+    public function save(): void
+    {
+        if (!$this->hasDirtyData) {
+            return;
+        }
+
+        $this->asset->saveQuietly();
+
+        $this->hasDirtyData = false;
+    }
+
+    private function log(string $message, mixed $context = []): void
+    {
+        if (config('statamic.metadata-importer.debug')) {
+            $prettyContext = print_r($context, true);
+            $text = "[Statamic Metadata Importer] Asset ID {$this->asset->id()}: {$message}";
+            if (str($prettyContext)->trim()->isNotEmpty()) {
+                $text .= " \n{$prettyContext}";
+            }
+
+            Log::debug($text);
+        }
+    }
+}
