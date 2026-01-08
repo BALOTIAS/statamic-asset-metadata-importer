@@ -54,8 +54,8 @@ class Importer
 
     private function readFileMetadata(string $filePath): array
     {
-        if (config('statamic.metadata-importer.exiftool_path')) {
-            $adapter = new ExiftoolAdapter(['toolPath'  => config('statamic.metadata-importer.exiftool_path')]);
+        if (config('statamic.asset-metadata-importer.exiftool_path')) {
+            $adapter = new ExiftoolAdapter(['toolPath'  => config('statamic.asset-metadata-importer.exiftool_path')]);
             $reader = new MetadataReader($adapter);
         } else {
             $reader = MetadataReader::factory(MetadataReader::TYPE_NATIVE);
@@ -81,7 +81,7 @@ class Importer
     {
         $blueprint = $this->asset->container->blueprint();
 
-        foreach (config('statamic.metadata-importer.fields', []) as $field => $sources) {
+        foreach (config('statamic.asset-metadata-importer.fields', []) as $field => $sources) {
             if (!$blueprint->hasField($field)) {
                 continue;
             }
@@ -127,7 +127,7 @@ class Importer
 
     private function log(string $message, mixed $context = []): void
     {
-        if (config('statamic.metadata-importer.debug')) {
+        if (config('statamic.asset-metadata-importer.debug')) {
             $prettyContext = print_r($context, true);
             $text = "[Statamic Metadata Importer] Asset ID {$this->asset->id()}: {$message}";
             if (str($prettyContext)->trim()->isNotEmpty()) {

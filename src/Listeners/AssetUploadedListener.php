@@ -9,7 +9,7 @@ class AssetUploadedListener
 {
     public function handle(AssetUploaded $event): void
     {
-        if (!$event->asset->extensionIsOneOf(config('statamic.metadata-importer.extensions'))) {
+        if (!$event->asset->extensionIsOneOf(config('statamic.asset-metadata-importer.extensions'))) {
             return;
         }
 

@@ -15,12 +15,12 @@ class ImportMetadataJob implements ShouldQueue
 
     public function __construct(public Asset $asset)
     {
-        $this->queue = config('statamic.metadata-importer.queue', 'default');
+        $this->queue = config('statamic.asset-metadata-importer.queue', 'default');
     }
 
     public function handle(): void
     {
-        if (!config('statamic.metadata-importer.fields')) {
+        if (!config('statamic.asset-metadata-importer.fields')) {
             return;
         }
 

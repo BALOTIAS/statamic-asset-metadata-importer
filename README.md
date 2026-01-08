@@ -23,7 +23,7 @@ Managing image metadata manually can be time-consuming and error-prone. Professi
 ## Requirements
 
 - Statamic 5.0 or higher
-- PHP 8.1 or higher
+- PHP 8.1 or higher (PHP 8.2+ required for Laravel 11+)
 - (Optional) Exiftool binary for extended format support
 
 ## Installation

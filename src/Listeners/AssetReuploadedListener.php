@@ -9,11 +9,11 @@ class AssetReuploadedListener
 {
     public function handle(AssetReuploaded $event): void
     {
-        if (! config('statamic.metadata-importer.overwrite_on_reupload')) {
+        if (!config('statamic.asset-metadata-importer.overwrite_on_reupload')) {
             return;
         }
 
-        if (!$event->asset->extensionIsOneOf(config('statamic.metadata-importer.extensions'))) {
+        if (!$event->asset->extensionIsOneOf(config('statamic.asset-metadata-importer.extensions'))) {
             return;
         }
 
