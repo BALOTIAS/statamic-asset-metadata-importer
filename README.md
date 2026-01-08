@@ -2,14 +2,14 @@
 
 > Automatically import and map EXIF/IPTC metadata from images to your Statamic asset fields on upload.
 
-## Overview
+## 📖 Overview
 
 This addon automatically extracts metadata from uploaded images and maps it to your asset fields. When you upload an image with embedded metadata (like copyright information, credits, descriptions, etc.), this addon will read that data and populate your asset fields accordingly.
 
 **Why use this addon?**  
-Managing image metadata manually can be time-consuming and error-prone. Professional photographers and content creators often embed important information directly into their images using tools like Adobe Lightroom or Photoshop. This addon ensures that metadata travels with your images, automatically populating fields like alt text, copyright, credits, and more—saving you time and maintaining consistency across your asset library.
+Managing image metadata manually can be time-consuming and error-prone. Professional photographers and content creators often embed important information directly into their images using tools like Adobe Lightroom or Photoshop. This addon ensures that metadata travels with your images, automatically populating fields like alt text, copyright, credits, and more, saving you time and maintaining consistency across your asset library.
 
-## Features
+## ✨ Features
 
 - **Automatic metadata extraction** on asset upload and re-upload
 - **Flexible field mapping** - Map any asset field to EXIF/IPTC metadata tags
@@ -21,13 +21,13 @@ Managing image metadata manually can be time-consuming and error-prone. Professi
 - **Configurable file extensions** - Choose which file types should be processed
 - **Debug mode** - Detailed logging for troubleshooting
 
-## Requirements
+## 📋 Requirements
 
 - Statamic 5.0 or higher
 - PHP 8.1 or higher (PHP 8.2+ required for Laravel 11+)
 - (Optional) Exiftool binary for extended format support
 
-## Installation
+## 📦 Installation
 
 Install the addon via Composer:
 
@@ -41,11 +41,11 @@ Publish the configuration file:
 php artisan vendor:publish --tag=statamic-asset-metadata-importer-config
 ```
 
-This will create a `config/statamic/metadata-importer.php` configuration file.
+This will create a `config/statamic/asset-metadata-importer.php` configuration file.
 
-## Configuration
+## ⚙️ Configuration
 
-### Basic Setup
+### 🔧 Basic Setup
 
 Open `config/statamic/asset-metadata-importer.php` and configure your field mappings:
 
@@ -59,7 +59,7 @@ Open `config/statamic/asset-metadata-importer.php` and configure your field mapp
 
 The keys are your asset field handles (defined in your asset container blueprint), and the values are the metadata tags to extract from the image.
 
-### Field Mapping
+### 🗺️ Field Mapping
 
 You can map fields in two ways:
 
@@ -75,7 +75,7 @@ You can map fields in two ways:
 
 When using multiple sources, the addon will try each one in order and use the first value it finds.
 
-### Loose Mapping
+### 🔍 Loose Mapping
 
 By default, the addon requires exact matches between your configured field sources and the metadata keys. However, you can enable **loose mapping** for more flexible matching:
 
@@ -111,11 +111,11 @@ With loose mapping enabled:
 
 **Note:** While loose mapping provides flexibility, it may lead to unexpected results if your search terms are too generic (e.g., searching for "d" would match many keys). Always test with your actual images to ensure the desired metadata is being extracted.
 
-### Available Metadata Tags
+### 🏷️ Available Metadata Tags
 
-The addon uses [php-exif](https://github.com/PHPExif/php-exif) for metadata extraction. You can use:
+The addon uses [miljar/php-exif](https://github.com/PHPExif/php-exif) for metadata extraction. You can use:
 
-- **Mapped fields** - Normalized field names from php-exif ([see list](https://github.com/PHPExif/php-exif/blob/master/lib/PHPExif/Exif.php))
+- **Mapped fields** - Normalized field names from php-exif (common fields like `title`, `description`, `keywords`, etc.)
 - **Raw tags** - Direct EXIF/IPTC/XMP tags (only in combination with Exiftool) (e.g., `XMP-photoshop:Copyright`, `IPTC:Caption-Abstract`)
 
 Common mappings:
@@ -126,7 +126,7 @@ Common mappings:
 - `credit` - Photo credit/attribution
 - `creator` - Creator/photographer name
 
-### Supported File Extensions
+### 📄 Supported File Extensions
 
 By default, the addon processes JPG and TIFF files:
 
@@ -138,7 +138,7 @@ By default, the addon processes JPG and TIFF files:
 
 To support additional formats like PNG, WEBP, and AVIF, you need to install Exiftool (see below).
 
-### Using Exiftool (Optional)
+### 🔧 Using Exiftool (Optional)
 
 For better metadata support and additional file formats, install [Exiftool](https://exiftool.org/):
 
@@ -175,12 +175,8 @@ Once configured, you can add more extensions:
 ],
 ```
 
-### Additional Options
+### ⚡ Additional Options
 
-**Loose mapping:**
-```php
-'loose_mapping' => false, // Set to true for partial/fuzzy metadata key matching
-```
 
 **Overwrite on re-upload:**
 ```php
@@ -202,7 +198,7 @@ Or in your `.env`:
 ASSET_METADATA_IMPORTER_DEBUG=true
 ```
 
-## Usage
+## 🚀 Usage
 
 Once configured, the addon works automatically:
 
@@ -212,7 +208,26 @@ Once configured, the addon works automatically:
 
 That's it! No additional action required.
 
-### Setting Up Asset Blueprint
+### ⚙️ How It Works
+
+**Metadata Extraction:**  
+The addon uses [miljar/php-exif](https://github.com/PHPExif/php-exif) to extract metadata from image files. By default, it uses PHP's native EXIF functions, which work well for JPG and TIFF files. For enhanced metadata support and additional formats (PNG, WEBP, AVIF), you can optionally configure Exiftool, which provides comprehensive metadata extraction capabilities across a wider range of file formats.
+
+**Local Storage:**  
+For assets stored on local filesystems, the addon reads metadata directly from the file path.
+
+**Remote Storage (S3, etc.):**  
+For assets stored on remote storage systems, the addon needs to temporarily download the file to read its metadata. This is because the underlying metadata extraction library requires a local file path to access the binary EXIF/IPTC data.
+
+The temporary download process:
+- Creates a temporary directory
+- Downloads the file from your remote storage
+- Extracts the metadata
+- Automatically cleans up the temporary file after processing
+
+This happens automatically and transparently during the upload process, so no additional configuration is needed.
+
+### 📝 Setting Up Asset Blueprint
 
 Make sure your asset container blueprint includes the fields you want to populate. For example:
 
@@ -225,7 +240,7 @@ Make sure your asset container blueprint includes the fields you want to populat
    - `credit` (Text field)
    - etc.
 
-## Example Workflow
+## 💡 Example Workflow
 
 1. Photographer exports images from Lightroom with embedded metadata
 2. Images are uploaded to Statamic
@@ -236,7 +251,7 @@ Make sure your asset container blueprint includes the fields you want to populat
    - Description → `description` field
 4. All metadata is immediately available without manual entry
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 **No metadata is imported:**
 - Verify your images actually contain metadata (check with an EXIF viewer)
@@ -252,15 +267,15 @@ Make sure your asset container blueprint includes the fields you want to populat
 - Ensure your queue worker is running: `php artisan queue:work`
 - Check the queue configuration matches your setup
 
-## License
+## 📄 License
 
 This addon is licensed under the MIT License.
 
-## Credits
+## 🙏 Credits
 
 * Inspired by [Image Metadata Importer](https://statamic.com/addons/heidkaemper/import-image-metadata)
 * Developed by [Balotias](https://github.com/balotias)  
-* Powered by [php-exif](https://github.com/PHPExif/php-exif)
+* Powered by [miljar/php-exif](https://github.com/PHPExif/php-exif)
 
 
 ![Statamic Asset Metadata Importer](./statamic-asset-metadata-importer.jpeg)
