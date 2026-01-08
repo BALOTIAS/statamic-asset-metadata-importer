@@ -1,9 +1,11 @@
-# .gitignore file created for free with Tower (https://www.git-tower.com/)
-# For suggestions or improvements please contact us using support@git-tower.com
-# Generated on 2026-01-08
-# Includes: composer, vscode, intellij
-
 ### Universal ###
+
+.bash_history
+.php-cs-fixer.cache
+.phpintel
+.viminfo
+.DS_Store
+
 # Common files that should be ignored in all projects
 
 # Logs

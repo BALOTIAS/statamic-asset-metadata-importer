@@ -1,6 +1,8 @@
 {
     "name": "balotias/statamic-asset-metadata-importer",
     "description": "Automatically import and map EXIF/IPTC metadata from images to your Statamic asset fields on upload",
+    "keywords": ["statamic", "statamic-cms", "statamic-addon", "metadata", "exif", "iptc", "asset", "image"],
+    "homepage": "https://github.com/balotias/statamic-asset-metadata-importer",
     "license": "MIT",
     "authors": [
         {
