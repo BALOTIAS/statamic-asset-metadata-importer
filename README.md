@@ -79,7 +79,7 @@ When using multiple sources, the addon will try each one in order and use the fi
 The addon uses [php-exif](https://github.com/PHPExif/php-exif) for metadata extraction. You can use:
 
 - **Mapped fields** - Normalized field names from php-exif ([see list](https://github.com/PHPExif/php-exif/blob/master/lib/PHPExif/Exif.php))
-- **Raw tags** - Direct EXIF/IPTC/XMP tags (e.g., `XMP-photoshop:Copyright`, `IPTC:Caption-Abstract`)
+- **Raw tags** - Direct EXIF/IPTC/XMP tags (only in combination with Exiftool) (e.g., `XMP-photoshop:Copyright`, `IPTC:Caption-Abstract`)
 
 Common mappings:
 - `title` - Image title/headline
@@ -219,3 +219,6 @@ This addon is licensed under the MIT License.
 * Inspired by [Image Metadata Importer](https://statamic.com/addons/heidkaemper/import-image-metadata)
 * Developed by [Balotias](https://github.com/balotias)  
 * Powered by [php-exif](https://github.com/PHPExif/php-exif)
+
+
+![Statamic Asset Metadata Importer](./statamic-asset-metadata-importer.jpeg)
