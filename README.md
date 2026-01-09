@@ -1,8 +1,6 @@
 # Statamic Asset Metadata Importer
 
-[![Latest Version](https://img.shields.io/packagist/v/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![Total Downloads](https://img.shields.io/packagist/dt/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![License](https://img.shields.io/packagist/l/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![Statamic](https://img.shields.io/badge/Statamic-5.0+-FF269E?style=flat-square&logo=statamic)](https://statamic.com) [![Tests](https://github.com/BALOTIAS/statamic-asset-metadata-importer/workflows/Tests/badge.svg)](https://github.com/BALOTIAS/statamic-asset-metadata-importer/actions)
-
-> Automatically import and map EXIF/IPTC metadata from images to your Statamic asset fields on upload.
+> Automatically import and map EXIF/IPTC metadata from your media to your Statamic asset fields on upload.
 
 ## 📖 Overview
 
@@ -280,3 +278,5 @@ This addon is licensed under the MIT License.
 
 
 ![Statamic Asset Metadata Importer](./statamic-asset-metadata-importer.jpeg)
+
+[![Latest Version](https://img.shields.io/packagist/v/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![Total Downloads](https://img.shields.io/packagist/dt/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![License](https://img.shields.io/packagist/l/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![Statamic](https://img.shields.io/badge/Statamic-5.0+-FF269E?style=flat-square&logo=statamic)](https://statamic.com/addons/balotias/asset-metadata-importer) [![Tests](https://github.com/BALOTIAS/statamic-asset-metadata-importer/workflows/Tests/badge.svg)](https://github.com/BALOTIAS/statamic-asset-metadata-importer/actions)
