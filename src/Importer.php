@@ -7,6 +7,7 @@ use Statamic\Assets\Asset;
 use Spatie\TemporaryDirectory\TemporaryDirectory;
 use PHPExif\Adapter\Exiftool as ExiftoolAdapter;
 use PHPExif\Reader\Reader as MetadataReader;
+use PHPExif\Enum\ReaderType;
 
 class Importer
 {
@@ -58,7 +59,7 @@ class Importer
             $adapter = new ExiftoolAdapter(['toolPath'  => config('statamic.asset-metadata-importer.exiftool_path')]);
             $reader = new MetadataReader($adapter);
         } else {
-            $reader = MetadataReader::factory(MetadataReader::TYPE_NATIVE);
+            $reader = MetadataReader::factory(ReaderType::NATIVE);
         }
 
         $exifMetadata = $reader->read($filePath);

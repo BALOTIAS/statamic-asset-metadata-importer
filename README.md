@@ -24,7 +24,7 @@ Managing image metadata manually can be time-consuming and error-prone. Professi
 ## 📋 Requirements
 
 - Statamic 5.0 or higher
-- PHP 8.1 or higher (PHP 8.2+ required for Laravel 11+)
+- PHP 8.2 or higher
 - (Optional) Exiftool binary for extended format support
 
 ## 📦 Installation
@@ -113,7 +113,7 @@ With loose mapping enabled:
 
 ### 🏷️ Available Metadata Tags
 
-The addon uses [miljar/php-exif](https://github.com/PHPExif/php-exif) for metadata extraction. You can use:
+The addon uses [lychee-org/php-exif](https://github.com/LycheeOrg/php-exif) for metadata extraction. You can use:
 
 - **Mapped fields** - Normalized field names from php-exif (common fields like `title`, `description`, `keywords`, etc.)
 - **Raw tags** - Direct EXIF/IPTC/XMP tags (only in combination with Exiftool) (e.g., `XMP-photoshop:Copyright`, `IPTC:Caption-Abstract`)
@@ -210,7 +210,7 @@ That's it! No additional action required.
 ### ⚙️ How It Works
 
 **Metadata Extraction:**  
-The addon uses [miljar/php-exif](https://github.com/PHPExif/php-exif) to extract metadata from image files. By default, it uses PHP's native EXIF functions, which work well for JPG and TIFF files. For enhanced metadata support and additional formats (PNG, WEBP, AVIF), you can optionally configure Exiftool, which provides comprehensive metadata extraction capabilities across a wider range of file formats.
+The addon uses [lychee-org/php-exif](https://github.com/LycheeOrg/php-exif) to extract metadata from image files. By default, it uses PHP's native EXIF functions, which work well for JPG and TIFF files. For enhanced metadata support and additional formats (PNG, WEBP, AVIF), you can optionally configure Exiftool, which provides comprehensive metadata extraction capabilities across a wider range of file formats.
 
 **Local Storage:**  
 For assets stored on local filesystems, the addon reads metadata directly from the file path.
@@ -274,7 +274,7 @@ This addon is licensed under the MIT License.
 
 * Inspired by [Image Metadata Importer](https://statamic.com/addons/heidkaemper/import-image-metadata)
 * Developed by [Balotias](https://github.com/balotias)  
-* Powered by [miljar/php-exif](https://github.com/PHPExif/php-exif)
+* Powered by [lychee-org/php-exif](https://github.com/LycheeOrg/php-exif)
 
 
 ![Statamic Asset Metadata Importer](./statamic-asset-metadata-importer.jpeg)

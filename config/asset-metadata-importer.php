@@ -25,7 +25,7 @@ return [
     |
     | Example: 'your_field' => ['mapped_php_exif_field', 'raw_php_exif_field']
     |
-    | php-exif mapped fields: https://github.com/PHPExif/php-exif/blob/master/lib/PHPExif/Exif.php
+    | php-exif mapped fields: https://github.com/LycheeOrg/php-exif/blob/v1.0.4/lib/PHPExif/Exif.php
     | NOTE: php-exif DOES NOT ensure that every tag is mapped correctly!
     | For more reliable results on additional formats, consider using Exiftool tags, e.g:
     | 'credit' => ['credit' # mapped value, 'XMP-photoshop:Credit' # raw value]
