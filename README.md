@@ -12,13 +12,15 @@ Managing image metadata manually can be time-consuming and error-prone. Professi
 ## ✨ Features
 
 - **Automatic metadata extraction** on asset upload and re-upload
+- **Multiple adapter support** - Native PHP, Exiftool, FFprobe, and ImageMagick adapters
+- **Flexible adapter mapping** - Configure which adapter to use for each file type
+- **Video file support** - Extract metadata from video files using FFprobe
+- **Wildcard support** - Process all file types or use pattern matching
 - **Flexible field mapping** - Map any asset field to EXIF/IPTC metadata tags
 - **Multiple metadata sources** - Define fallback sources for each field
 - **Loose mapping mode** - Partial matching for flexible metadata extraction
 - **Queue support** - Process metadata import asynchronously for better performance
-- **Exiftool integration** - Support for PNG, WEBP, AVIF and many more formats
 - **Local and cloud storage** - Works with both local filesystems and remote storage (S3, etc.)
-- **Configurable file extensions** - Choose which file types should be processed
 - **Debug mode** - Detailed logging for troubleshooting
 
 ## 📋 Requirements
@@ -26,6 +28,8 @@ Managing image metadata manually can be time-consuming and error-prone. Professi
 - Statamic 5.0 or higher
 - PHP 8.2 or higher
 - (Optional) Exiftool binary for extended format support
+- (Optional) FFmpeg/FFprobe binary for video file support
+- (Optional) PHP Imagick extension for ImageMagick adapter
 
 ## 📦 Installation
 
@@ -128,19 +132,86 @@ Common mappings:
 
 ### 📄 Supported File Extensions
 
-By default, the addon processes JPG and TIFF files:
+Configure which file extensions should trigger metadata extraction:
 
 ```php
 'extensions' => [
-    'jpg', 'jpeg', 'tif', 'tiff',
+    'jpg', 'jpeg', 'tif', 'tiff', 'png', 'webp', 'avif'
 ],
 ```
 
-To support additional formats like PNG, WEBP, and AVIF, you need to install Exiftool (see below).
+You can also use a wildcard to process all file types:
 
-### 🔧 Using Exiftool (Optional)
+```php
+'extensions' => ['*'], // Process all uploaded files
+```
 
-For better metadata support and additional file formats, install [Exiftool](https://exiftool.org/):
+### 🎯 Adapter System
+
+The addon supports multiple metadata extraction adapters, each optimized for different file formats. Configure which adapter to use for which file types:
+
+```php
+'adapter_mapping' => [
+    'native' => ['jpg', 'jpeg', 'tif', 'tiff'],
+    'exiftool' => ['png', 'webp', 'avif'],
+    'ffprobe' => ['mp4', 'mov', 'avi', 'mkv'],
+    'imagick' => ['gif', 'bmp'],
+],
+```
+
+#### Available Adapters
+
+> 💡 **Recommendation:** We strongly recommend using **Exiftool** as your primary adapter. It supports [100+ file types](https://exiftool.org/#supported) and can read, write, and edit [29,000+ metadata tags](https://exiftool.org/TagNames/index.html), providing the most comprehensive metadata extraction across virtually all image and video formats.
+
+**1. Native (Default)**
+- **Requirements:** None (built-in PHP)
+- **Formats:** JPG, JPEG, TIF, TIFF
+- **Best for:** Common image formats, fastest performance
+- **Note:** Limited format support but no external dependencies
+
+**2. Exiftool** ⭐ Recommended
+- **Requirements:** Exiftool binary
+- **Formats:** [100+ file types](https://exiftool.org/#supported) including all major image formats
+- **Metadata Support:** [29,000+ tags](https://exiftool.org/TagNames/index.html) (EXIF, IPTC, XMP, and more)
+- **Best for:** Maximum format coverage and metadata extraction
+- **Installation:** See below
+
+**3. FFprobe**
+- **Requirements:** FFmpeg/FFprobe binary
+- **Formats:** [Video files](https://www.ffmpeg.org/ffprobe-all.html#File-Formats) (MP4, MOV, AVI, MKV, etc.)
+- **Best for:** Extracting metadata from video files
+- **Configuration:** Set `ASSET_METADATA_IMPORTER_FFMPEG_PATH` in `.env`
+
+**4. ImageMagick (Imagick)**
+- **Requirements:** PHP Imagick extension
+- **Formats:** [200+ formats](https://imagemagick.org/script/formats.php#supported) including PNG, GIF, BMP
+- **Best for:** When Imagick extension is already installed
+- **Note:** Less reliable than Exiftool but doesn't require external binary
+
+#### Wildcard Support
+
+You can use wildcards in adapter mappings to process all file types with a specific adapter:
+
+```php
+'adapter_mapping' => [
+    'exiftool' => ['*'], // Use Exiftool for all file types
+],
+```
+
+Or mix wildcards with specific extensions:
+
+```php
+'adapter_mapping' => [
+    'native' => ['jpg', 'jpeg'], // Fast processing for common formats
+    'exiftool' => ['*'],          // Exiftool for everything else
+],
+```
+
+**Adapter precedence:** The first matching adapter is used, so order matters!
+
+### 🔧 Installing Exiftool (Recommended)
+
+For the best metadata support across all image formats, install [Exiftool](https://exiftool.org/):
 
 **macOS (via Homebrew):**
 ```bash
@@ -155,23 +226,49 @@ apt-get install libimage-exiftool-perl
 **Windows:**  
 Download from [exiftool.org](https://exiftool.org/) and extract to a directory.
 
-Copy the path to the `exiftool` binary. 
+Find the path to the binary:
 ```bash
-which exiftool
+which exiftool  # macOS/Linux
+# or
+where exiftool  # Windows
 ```
 
-Then configure the path in your `.env` file:
+Configure the path in your `.env` file:
 
 ```env
-ASSET_METADATA_IMPORTER_EXIFTOOL_PATH=/usr/bin/exiftool
+ASSET_METADATA_IMPORTER_EXIFTOOL_PATH=/usr/local/bin/exiftool
 ```
 
-Once configured, you can add more extensions:
+Then update your adapter mapping to use Exiftool:
 
 ```php
-'extensions' => [
-    'jpg', 'jpeg', 'tif', 'tiff', 'png', 'webp', 'avif'
+'adapter_mapping' => [
+    'native' => ['jpg', 'jpeg'],        // Fast for common formats
+    'exiftool' => ['png', 'webp', 'avif'], // Exiftool for others
 ],
+```
+
+### 🎬 Installing FFmpeg (For Video Files)
+
+To extract metadata from video files, install [FFmpeg](https://ffmpeg.org/):
+
+**macOS (via Homebrew):**
+```bash
+brew install ffmpeg
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+apt-get install ffmpeg
+```
+
+**Windows:**  
+Download from [ffmpeg.org](https://ffmpeg.org/) and add to PATH.
+
+Configure in your `.env`:
+
+```env
+ASSET_METADATA_IMPORTER_FFMPEG_PATH=/usr/local/bin/ffmpeg
 ```
 
 ### ⚡ Additional Options
@@ -210,7 +307,14 @@ That's it! No additional action required.
 ### ⚙️ How It Works
 
 **Metadata Extraction:**  
-The addon uses [lychee-org/php-exif](https://github.com/LycheeOrg/php-exif) to extract metadata from image files. By default, it uses PHP's native EXIF functions, which work well for JPG and TIFF files. For enhanced metadata support and additional formats (PNG, WEBP, AVIF), you can optionally configure Exiftool, which provides comprehensive metadata extraction capabilities across a wider range of file formats.
+The addon uses [lychee-org/php-exif](https://github.com/LycheeOrg/php-exif) to extract metadata from files. It supports multiple adapters for different file types:
+
+- **Native adapter** - Uses PHP's built-in EXIF functions (JPG, TIFF)
+- **Exiftool adapter** - Uses Exiftool binary for comprehensive format support (PNG, WEBP, AVIF, and more)
+- **FFprobe adapter** - Uses FFmpeg for video file metadata extraction
+- **ImageMagick adapter** - Uses PHP Imagick extension for additional image formats
+
+You configure which adapter to use for which file types through the `adapter_mapping` configuration, giving you complete control over metadata extraction for your specific needs.
 
 **Local Storage:**  
 For assets stored on local filesystems, the addon reads metadata directly from the file path.
@@ -255,12 +359,22 @@ Make sure your asset container blueprint includes the fields you want to populat
 **No metadata is imported:**
 - Verify your images actually contain metadata (check with an EXIF viewer)
 - Ensure field handles in the config match your blueprint exactly
+- Check that file extensions are configured in both `extensions` and `adapter_mapping`
+- Verify the appropriate adapter is configured for your file type
 - Enable debug mode to see what's happening
 - Check the Laravel logs at `storage/logs/laravel.log`
 
 **Specific file types not working:**
 - For PNG, WEBP, AVIF: Install and configure Exiftool
-- Verify the file extension is listed in the `extensions` config
+- For video files: Install and configure FFmpeg/FFprobe
+- For GIF, BMP: Configure ImageMagick adapter or Exiftool
+- Verify the file extension is mapped to an adapter in `adapter_mapping`
+
+**Adapter-specific issues:**
+- **Native adapter:** Only supports JPG, JPEG, TIF, TIFF
+- **Exiftool:** Ensure binary path is correct and binary is executable
+- **FFprobe:** Ensure FFmpeg is installed and path is correct
+- **ImageMagick:** Ensure PHP Imagick extension is installed (`php -m | grep imagick`)
 
 **Queue issues:**
 - Ensure your queue worker is running: `php artisan queue:work`

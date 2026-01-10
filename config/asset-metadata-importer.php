@@ -88,12 +88,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Exiftool
+    | Exiftool (Recommended)
     |--------------------------------------------------------------------------
     |
-    | If you want to support additional image formats like PNG, WEBP, AVIF or more,
-    | you need to provide the path to the exiftool binary.
-    | See: https://exiftool.org/
+    | For comprehensive metadata extraction, we strongly recommend using Exiftool.
+    | It supports 100+ file types and can read/write 29,000+ metadata tags.
+    |
+    | Supported file types: https://exiftool.org/#supported
+    | Supported metadata tags: https://exiftool.org/TagNames/index.html
+    |
+    | Installation:
+    | - macOS: brew install exiftool
+    | - Linux: apt-get install libimage-exiftool-perl
+    | - Windows: Download from https://exiftool.org/
     |
      */
 
@@ -101,11 +108,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | FFMpeg
+    | FFMpeg / FFprobe
     |--------------------------------------------------------------------------
     |
-    | If you want to extract metadata from video files using ffmpeg, you need to provide the
-    | path to the ffmpeg binary.
+    | To extract metadata from video files, provide the path to the FFmpeg binary.
+    | The FFprobe adapter will be used for video file formats.
+    |
+    | Supported file formats: https://www.ffmpeg.org/ffprobe-all.html#File-Formats
     | See: https://ffmpeg.org/
     |
      */
@@ -118,18 +127,28 @@ return [
     |--------------------------------------------------------------------------
     |
     | Define file extensions to use specific metadata adapters.
-    | Supported adapters: 'native' (PHPExif Native), 'exiftool' (PHPExif Exiftool), 'ffprobe' (PHPExif FFprobe), 'imagick' (PHPExif ImageMagick)
-    | Comment out adapters you don't want to use.
     |
-    | Example: 'native' => ['jpg', 'jpeg'], 'exiftool' => ['png', 'webp'], 'ffprobe' => ['mp4', 'mov'], 'imagick' => ['gif']
+    | Available adapters:
+    | - 'native'   - Built-in PHP (jpg, jpeg, tif, tiff only)
+    | - 'exiftool' - Exiftool binary (100+ formats, 29k+ tags) ⭐ Recommended
+    | - 'ffprobe'  - FFmpeg/FFprobe (video files)
+    | - 'imagick'  - PHP Imagick extension (200+ formats, less reliable)
+    |
+    | Documentation:
+    | - Exiftool formats: https://exiftool.org/#supported
+    | - FFprobe formats: https://www.ffmpeg.org/ffprobe-all.html#File-Formats
+    | - ImageMagick formats: https://imagemagick.org/script/formats.php#supported
+    |
+    | The first matching adapter is used, so order matters!
+    | Use '*' as a wildcard to match all file types.
     |
      */
     'adapter_mapping' => [
-        'native' => ['jpg', 'jpeg', 'tif', 'tiff'], // Use native PHPExif for common image formats - supports only jpg, jpeg, tif, tiff
-        // 'exiftool' => ['*'], // Use exiftool for all formats
-        // 'exiftool' => ['jpg', 'jpeg', 'tif', 'tiff', 'png', 'webp', 'avif'], // Use exiftool for certain image formats
+        'native' => ['jpg', 'jpeg', 'tif', 'tiff'], // Fast, built-in PHP (limited formats)
+        // 'exiftool' => ['*'], // Use exiftool for all formats (recommended)
+        // 'exiftool' => ['png', 'webp', 'avif', 'heic'], // Use exiftool for specific formats
         // 'ffprobe' => ['mp4', 'mov', 'avi', 'mkv'], // Use ffprobe for video files
-        // 'imagick' => ['png', 'gif'], // Use ImageMagick adapter for certain formats (less reliable)
+        // 'imagick' => ['png', 'gif', 'bmp'], // Use ImageMagick (requires PHP extension)
     ],
 
     /*
