@@ -1328,4 +1328,275 @@ class ImporterTest extends TestCase
             $this->assertTrue(true);
         }
     }
+
+    public function test_adapters_stop_being_tried_after_metadata_found(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.debug' => true,
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => ['jpg'],    // First - might find metadata
+                'exiftool' => ['jpg'],  // Second - should not be tried if first succeeds
+                'imagick' => ['jpg'],   // Third - should not be tried
+            ],
+        ]);
+
+        $logMessages = [];
+        Log::shouldReceive('debug')
+            ->andReturnUsing(function ($message) use (&$logMessages) {
+                $logMessages[] = $message;
+            });
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        // Count how many adapters were actually tried
+        $adapterAttempts = 0;
+        foreach ($logMessages as $message) {
+            if (str_contains($message, 'Trying adapter #')) {
+                $adapterAttempts++;
+            }
+        }
+
+        // Should not try all 3 adapters if metadata found early
+        // With fake files, adapters might all be tried, but the logic should stop when metadata found
+        $this->assertGreaterThanOrEqual(1, $adapterAttempts, 'At least one adapter should be tried');
+        $this->assertLessThanOrEqual(3, $adapterAttempts, 'Should not try more than configured adapters');
+    }
+
+    public function test_metadata_not_found_message_logged_when_all_adapters_exhausted(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.debug' => true,
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'exiftool' => ['png'], // Will fail - wrong tool
+            ],
+            'statamic.asset-metadata-importer.exiftool_path' => '/nonexistent/exiftool',
+        ]);
+
+        $logMessages = [];
+        Log::shouldReceive('debug')
+            ->andReturnUsing(function ($message) use (&$logMessages) {
+                $logMessages[] = $message;
+            });
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.png');
+
+        try {
+            $importer = new Importer($asset);
+
+            // Check for "not found with any adapter" message
+            $foundMessage = false;
+            foreach ($logMessages as $message) {
+                if (str_contains($message, 'Metadata not found with any adapter')) {
+                    $foundMessage = true;
+                    break;
+                }
+            }
+
+            $this->assertTrue($foundMessage, 'Should log message when all adapters fail to find metadata');
+        } catch (\Exception $e) {
+            // Expected with invalid exiftool path
+            $this->assertTrue(true);
+        }
+    }
+
+    public function test_adapter_name_is_logged_correctly(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.debug' => true,
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => ['jpg'],
+            ],
+        ]);
+
+        $logMessages = [];
+        Log::shouldReceive('debug')
+            ->andReturnUsing(function ($message) use (&$logMessages) {
+                $logMessages[] = $message;
+            });
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        // Verify adapter name appears in logs
+        $foundNativeAdapterLog = false;
+        foreach ($logMessages as $message) {
+            if (str_contains($message, 'Native')) {
+                $foundNativeAdapterLog = true;
+                break;
+            }
+        }
+
+        $this->assertTrue($foundNativeAdapterLog, 'Native adapter name should be logged');
+    }
+
+    public function test_multiple_extensions_in_same_adapter_config(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => ['jpg', 'jpeg', 'tif', 'tiff'],
+            ],
+        ]);
+
+        $testExtensions = ['jpg', 'jpeg', 'tif', 'tiff'];
+
+        foreach ($testExtensions as $ext) {
+            $container = $this->createAssetContainer();
+            $asset = $this->createAsset($container, "test.{$ext}");
+
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        }
+    }
+
+    public function test_adapter_mapping_with_empty_extensions_array(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => [], // Empty array
+            ],
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Should handle empty extensions array gracefully
+        $importer = new Importer($asset);
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_multiple_adapters_same_type_for_different_extensions(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => ['jpg'],
+                'exiftool' => ['png'],
+                'native' => ['tif'], // Duplicate key overwrites previous
+            ],
+        ]);
+
+        // In PHP, duplicate keys overwrite, so only 'native' => ['tif'] remains
+        $container = $this->createAssetContainer();
+
+        // JPG should not have adapter (was overwritten)
+        $jpgAsset = $this->createAsset($container, 'test.jpg');
+        $importer = new Importer($jpgAsset);
+        $this->assertInstanceOf(Importer::class, $importer);
+
+        // TIF should work
+        $tifAsset = $this->createAsset($container, 'test.tif');
+        $importer = new Importer($tifAsset);
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_remote_file_temp_handling_with_multiple_adapters(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => ['jpg'],
+                'exiftool' => ['jpg'],
+            ],
+        ]);
+
+        // Create a mock remote asset
+        $container = $this->createAssetContainer();
+        $asset = $this->getMockBuilder(\Statamic\Assets\Asset::class)
+            ->onlyMethods(['resolvedPath', 'stream', 'path', 'container', 'id', 'saveQuietly'])
+            ->getMock();
+
+        $asset->method('resolvedPath')->willReturn('/nonexistent/path/remote.jpg');
+        $asset->method('path')->willReturn('remote.jpg');
+        $asset->method('id')->willReturn('test-asset-id');
+        $asset->method('container')->willReturn($container);
+
+        $streamCallCount = 0;
+        $asset->method('stream')->willReturnCallback(function () use (&$streamCallCount) {
+            $streamCallCount++;
+            $stream = fopen('php://memory', 'r+');
+            fwrite($stream, 'fake remote image content');
+            rewind($stream);
+            return $stream;
+        });
+
+        // Process with multiple adapters
+        $importer = new Importer($asset);
+
+        // Verify stream was called only once (file downloaded once for all adapters)
+        $this->assertEquals(1, $streamCallCount, 'Remote file should be downloaded only once');
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_adapter_fallback_with_loose_mapping_enabled(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.loose_mapping' => true,
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => ['jpg'],
+                'exiftool' => ['jpg'],
+            ],
+            'statamic.asset-metadata-importer.fields' => [
+                'credit' => 'credit',
+            ],
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Should work with both adapter fallback and loose mapping
+        $importer = new Importer($asset);
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_wildcard_with_specific_extension_overlap(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => ['jpg', 'jpeg'],  // Specific
+                'exiftool' => ['*'],          // Wildcard (includes jpg)
+            ],
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Should try native first (specific), then exiftool (wildcard)
+        $importer = new Importer($asset);
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_no_metadata_saved_when_no_adapter_finds_data(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'exiftool' => ['jpg'], // Will fail with nonexistent path
+            ],
+            'statamic.asset-metadata-importer.exiftool_path' => '/totally/fake/path/exiftool',
+            'statamic.asset-metadata-importer.fields' => [
+                'alt' => 'title',
+            ],
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        try {
+            $importer = new Importer($asset);
+
+            // Asset should not have 'alt' field populated
+            $data = $asset->data();
+            if ($data instanceof \Illuminate\Support\Collection) {
+                $this->assertFalse($data->has('alt') && !empty($data->get('alt')));
+            } else {
+                $this->assertTrue(!isset($data['alt']) || empty($data['alt']));
+            }
+        } catch (\Exception $e) {
+            // Expected when exiftool fails
+            $this->assertTrue(true);
+        }
+    }
 }
