@@ -34,7 +34,8 @@
         "lychee-org/php-exif": "dev-master"
     },
     "require-dev": {
-        "orchestra/testbench": "^9.0 || ^10.0"
+        "orchestra/testbench": "^9.0 || ^10.0",
+        "laravel/pint": "^1.27"
     },
     "config": {
         "allow-plugins": {
