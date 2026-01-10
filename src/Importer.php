@@ -3,13 +3,13 @@
 namespace Balotias\StatamicAssetMetadataImporter;
 
 use Illuminate\Support\Facades\Log;
-use Statamic\Assets\Asset;
-use Spatie\TemporaryDirectory\TemporaryDirectory;
 use PHPExif\Adapter\Exiftool as ExiftoolAdapter;
 use PHPExif\Adapter\FFprobe as FFprobeAdapter;
 use PHPExif\Adapter\ImageMagick as ImageMagickAdapter;
 use PHPExif\Adapter\Native as NativeAdapter;
 use PHPExif\Reader\Reader as MetadataReader;
+use Spatie\TemporaryDirectory\TemporaryDirectory;
+use Statamic\Assets\Asset;
 
 class Importer
 {
@@ -20,12 +20,12 @@ class Importer
 
     protected bool $hasDirtyData = false;
 
-    public function __construct(public Asset $asset) {
+    public function __construct(public Asset $asset)
+    {
         $this->readMetadata();
         $this->mapToAssetField();
         $this->save();
     }
-
 
     public function readMetadata(): void
     {
@@ -38,7 +38,7 @@ class Importer
         } else {
             // For remote disks (S3, etc), create a temporary directory and download the file - will be deleted automatically
             $resource = $this->asset->stream();
-            $tempDirectory = (new TemporaryDirectory())->deleteWhenDestroyed()->create();
+            $tempDirectory = (new TemporaryDirectory)->deleteWhenDestroyed()->create();
             $tempPath = $tempDirectory->path(basename($path));
 
             // Copy the stream resource to the temporary file
@@ -61,6 +61,7 @@ class Importer
 
         if (empty($adapters)) {
             $this->log('No adapter configured for file type', $filePath);
+
             return [
                 'data' => [],
                 'rawData' => [],
@@ -77,8 +78,9 @@ class Importer
                 $exifMetadata = $reader->read($filePath);
 
                 // If metadata found, return it
-                if ($exifMetadata && (!empty($exifMetadata->getData()) || !empty($exifMetadata->getRawData()))) {
+                if ($exifMetadata && (! empty($exifMetadata->getData()) || ! empty($exifMetadata->getRawData()))) {
                     $this->log("Metadata found using adapter: {$adapterName}");
+
                     return [
                         'data' => $exifMetadata->getData(),
                         'rawData' => $exifMetadata->getRawData(),
@@ -94,6 +96,7 @@ class Importer
 
         // No adapter found metadata
         $this->log('Metadata not found with any adapter!', $filePath);
+
         return [
             'data' => [],
             'rawData' => [],
@@ -121,8 +124,8 @@ class Importer
 
     private function createAdapter(string $adapterType): ?object
     {
-        return match($adapterType) {
-            'native' => new NativeAdapter(),
+        return match ($adapterType) {
+            'native' => new NativeAdapter,
             'exiftool' => new ExiftoolAdapter(
                 [],
                 config('statamic.asset-metadata-importer.exiftool_path', '') ?? ''
@@ -131,14 +134,14 @@ class Importer
                 [],
                 config('statamic.asset-metadata-importer.ffmpeg_path', '') ?? ''
             ),
-            'imagick' => new ImageMagickAdapter(),
+            'imagick' => new ImageMagickAdapter,
             default => null,
         };
     }
 
     private function getAdapterName(object $adapter): string
     {
-        return match(get_class($adapter)) {
+        return match (get_class($adapter)) {
             NativeAdapter::class => 'Native',
             ExiftoolAdapter::class => 'Exiftool',
             FFprobeAdapter::class => 'FFprobe',
@@ -152,7 +155,7 @@ class Importer
         $blueprint = $this->asset->container->blueprint();
 
         foreach (config('statamic.asset-metadata-importer.fields', []) as $field => $sources) {
-            if (!$blueprint->hasField($field)) {
+            if (! $blueprint->hasField($field)) {
                 continue;
             }
 
@@ -217,7 +220,7 @@ class Importer
 
     public function save(): void
     {
-        if (!$this->hasDirtyData) {
+        if (! $this->hasDirtyData) {
             return;
         }
 

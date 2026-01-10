@@ -6,7 +6,6 @@ use Balotias\StatamicAssetMetadataImporter\ServiceProvider;
 
 class ServiceProviderTest extends TestCase
 {
-
     public function test_it_registers_the_service_provider(): void
     {
         $this->assertInstanceOf(
@@ -14,7 +13,6 @@ class ServiceProviderTest extends TestCase
             $this->app->getProvider(ServiceProvider::class)
         );
     }
-
 
     public function test_it_merges_config(): void
     {
@@ -25,7 +23,6 @@ class ServiceProviderTest extends TestCase
         $this->assertArrayHasKey('extensions', config('statamic.asset-metadata-importer'));
         $this->assertArrayHasKey('queue', config('statamic.asset-metadata-importer'));
     }
-
 
     public function test_it_has_correct_default_config_values(): void
     {
@@ -39,7 +36,6 @@ class ServiceProviderTest extends TestCase
         $this->assertContains('jpeg', $config['extensions']);
         $this->assertEquals('default', $config['queue']);
     }
-
 
     public function test_it_registers_event_listeners(): void
     {

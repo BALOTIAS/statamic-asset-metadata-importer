@@ -22,7 +22,6 @@ class AssetReuploadedListenerTest extends TestCase
         ]);
     }
 
-
     public function test_it_dispatches_job_when_overwrite_is_enabled(): void
     {
         config()->set('statamic.asset-metadata-importer.overwrite_on_reupload', true);
@@ -31,7 +30,7 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.jpg');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
@@ -39,7 +38,6 @@ class AssetReuploadedListenerTest extends TestCase
             return $job->asset->id() === $asset->id();
         });
     }
-
 
     public function test_it_does_not_dispatch_job_when_overwrite_is_disabled(): void
     {
@@ -49,13 +47,12 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.jpg');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
         Queue::assertNotPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_dispatches_job_for_supported_extensions_only(): void
     {
@@ -65,13 +62,12 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.jpg');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
         Queue::assertPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_does_not_dispatch_job_for_unsupported_extensions(): void
     {
@@ -81,13 +77,12 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-file.pdf');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
         Queue::assertNotPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_does_not_dispatch_job_for_svg_files_even_when_overwrite_enabled(): void
     {
@@ -97,13 +92,12 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.svg');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
         Queue::assertNotPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_checks_overwrite_config_before_extension(): void
     {
@@ -113,14 +107,13 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.jpg');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
         // Even though extension is supported, should not dispatch because overwrite is disabled
         Queue::assertNotPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_dispatches_job_for_jpeg_extension(): void
     {
@@ -130,13 +123,12 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.jpeg');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
         Queue::assertPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_dispatches_job_for_png_extension(): void
     {
@@ -146,13 +138,12 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.png');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
         Queue::assertPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_dispatches_job_for_tiff_extension(): void
     {
@@ -162,13 +153,12 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.tiff');
 
         $event = new AssetReuploaded($asset, $asset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
         Queue::assertPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_respects_configured_extensions(): void
     {
@@ -180,20 +170,19 @@ class AssetReuploadedListenerTest extends TestCase
         // JPG should be processed
         $jpgAsset = $this->makeAsset($container, 'test-image.jpg');
         $jpgEvent = new AssetReuploaded($jpgAsset, $jpgAsset->filename());
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
         $listener->handle($jpgEvent);
 
         Queue::assertPushed(ImportMetadataJob::class, 1);
 
         // PNG should not be processed (not in config)
         $pngAsset = $this->makeAsset($container, 'test-image.png');
-        $pngEvent = new AssetReuploaded($pngAsset, "test-image.png");
+        $pngEvent = new AssetReuploaded($pngAsset, 'test-image.png');
         $listener->handle($pngEvent);
 
         // Still only 1 job should be pushed (from JPG)
         Queue::assertPushed(ImportMetadataJob::class, 1);
     }
-
 
     public function test_it_is_case_insensitive_for_extensions(): void
     {
@@ -205,7 +194,7 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-image.JPG');
 
         $event = new AssetReuploaded($asset, 'original-name.JPG');
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
@@ -225,7 +214,7 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-file.xyz');
 
         $event = new AssetReuploaded($asset, 'test-file.xyz');
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
@@ -246,7 +235,7 @@ class AssetReuploadedListenerTest extends TestCase
             $asset = $this->makeAsset($container, "test.{$ext}");
 
             $event = new AssetReuploaded($asset, "test.{$ext}");
-            $listener = new AssetReuploadedListener();
+            $listener = new AssetReuploadedListener;
 
             $listener->handle($event);
 
@@ -263,7 +252,7 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-file.jpg');
 
         $event = new AssetReuploaded($asset, 'test-file.jpg');
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
@@ -280,7 +269,7 @@ class AssetReuploadedListenerTest extends TestCase
         $asset = $this->makeAsset($container, 'test-file.pdf');
 
         $event = new AssetReuploaded($asset, 'test-file.pdf');
-        $listener = new AssetReuploadedListener();
+        $listener = new AssetReuploadedListener;
 
         $listener->handle($event);
 
@@ -299,4 +288,3 @@ class AssetReuploadedListenerTest extends TestCase
         return tap($container->makeAsset($path))->save();
     }
 }
-

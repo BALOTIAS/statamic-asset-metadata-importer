@@ -14,10 +14,11 @@ class AssetUploadedListener
         // If wildcard is used, allow all extensions
         if (in_array('*', $extensions)) {
             ImportMetadataJob::dispatch($event->asset);
+
             return;
         }
 
-        if (!$event->asset->extensionIsOneOf($extensions)) {
+        if (! $event->asset->extensionIsOneOf($extensions)) {
             return;
         }
 

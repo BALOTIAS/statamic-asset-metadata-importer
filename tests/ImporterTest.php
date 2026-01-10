@@ -3,11 +3,10 @@
 namespace Balotias\StatamicAssetMetadataImporter\Tests;
 
 use Balotias\StatamicAssetMetadataImporter\Importer;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
-use Statamic\Facades\Blueprint;
 
 class ImporterTest extends TestCase
 {
@@ -19,7 +18,6 @@ class ImporterTest extends TestCase
         Storage::fake('assets');
     }
 
-
     public function test_it_can_be_instantiated_with_an_asset(): void
     {
         $container = $this->createAssetContainer();
@@ -29,7 +27,6 @@ class ImporterTest extends TestCase
 
         $this->assertInstanceOf(Importer::class, $importer);
     }
-
 
     public function test_it_reads_metadata_from_local_files(): void
     {
@@ -42,7 +39,6 @@ class ImporterTest extends TestCase
         // If we get here without errors, metadata was read successfully
         $this->assertInstanceOf(Importer::class, $importer);
     }
-
 
     public function test_it_maps_metadata_to_asset_fields(): void
     {
@@ -60,7 +56,6 @@ class ImporterTest extends TestCase
         $data = $asset->data();
         $this->assertTrue(is_array($data) || $data instanceof \Illuminate\Support\Collection);
     }
-
 
     public function test_it_only_maps_fields_that_exist_in_blueprint(): void
     {
@@ -83,7 +78,6 @@ class ImporterTest extends TestCase
         }
     }
 
-
     public function test_it_handles_multiple_source_fallbacks(): void
     {
         config(['statamic.asset-metadata-importer.fields' => [
@@ -99,7 +93,6 @@ class ImporterTest extends TestCase
         $this->assertTrue(true); // If we get here without errors, the fallback logic works
     }
 
-
     public function test_it_logs_when_debug_is_enabled(): void
     {
         config(['statamic.asset-metadata-importer.debug' => true]);
@@ -112,7 +105,6 @@ class ImporterTest extends TestCase
         // Constructor automatically imports metadata
         new Importer($asset);
     }
-
 
     public function test_it_does_not_log_when_debug_is_disabled(): void
     {
@@ -127,7 +119,6 @@ class ImporterTest extends TestCase
         new Importer($asset);
     }
 
-
     public function test_it_handles_files_without_metadata_gracefully(): void
     {
         $container = $this->createAssetContainer();
@@ -139,7 +130,6 @@ class ImporterTest extends TestCase
         // If we get here without errors, the empty metadata was handled gracefully
         $this->assertInstanceOf(Importer::class, $importer);
     }
-
 
     public function test_it_saves_asset_when_metadata_is_mapped(): void
     {
@@ -157,14 +147,13 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
-
     public function test_it_uses_exact_match_when_loose_mapping_is_disabled(): void
     {
         config([
             'statamic.asset-metadata-importer.loose_mapping' => false,
             'statamic.asset-metadata-importer.fields' => [
                 'alt' => 'title',
-            ]
+            ],
         ]);
 
         $container = $this->createAssetContainer();
@@ -177,14 +166,13 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
-
     public function test_it_uses_loose_matching_when_enabled(): void
     {
         config([
             'statamic.asset-metadata-importer.loose_mapping' => true,
             'statamic.asset-metadata-importer.fields' => [
                 'credit' => 'credit', // Should match any key containing 'credit'
-            ]
+            ],
         ]);
 
         $container = $this->createAssetContainer();
@@ -197,14 +185,13 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
-
     public function test_loose_mapping_prefers_exact_match_first(): void
     {
         config([
             'statamic.asset-metadata-importer.loose_mapping' => true,
             'statamic.asset-metadata-importer.fields' => [
                 'alt' => 'title',
-            ]
+            ],
         ]);
 
         $container = $this->createAssetContainer();
@@ -217,14 +204,13 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
-
     public function test_loose_mapping_is_case_insensitive(): void
     {
         config([
             'statamic.asset-metadata-importer.loose_mapping' => true,
             'statamic.asset-metadata-importer.fields' => [
                 'credit' => 'CREDIT', // Uppercase search
-            ]
+            ],
         ]);
 
         $container = $this->createAssetContainer();
@@ -237,14 +223,13 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
-
     public function test_loose_mapping_with_multiple_sources(): void
     {
         config([
             'statamic.asset-metadata-importer.loose_mapping' => true,
             'statamic.asset-metadata-importer.fields' => [
                 'credit' => ['exact_field', 'credit', 'partial'],
-            ]
+            ],
         ]);
 
         $container = $this->createAssetContainer();
@@ -257,14 +242,13 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
-
     public function test_loose_mapping_returns_null_when_no_match(): void
     {
         config([
             'statamic.asset-metadata-importer.loose_mapping' => true,
             'statamic.asset-metadata-importer.fields' => [
                 'alt' => 'completely_nonexistent_field_xyz',
-            ]
+            ],
         ]);
 
         $container = $this->createAssetContainer();
@@ -277,14 +261,13 @@ class ImporterTest extends TestCase
         $this->assertTrue(true);
     }
 
-
     public function test_loose_mapping_handles_multibyte_characters(): void
     {
         config([
             'statamic.asset-metadata-importer.loose_mapping' => true,
             'statamic.asset-metadata-importer.fields' => [
                 'credit' => 'crédit', // French accented character
-            ]
+            ],
         ]);
 
         $container = $this->createAssetContainer();
@@ -296,7 +279,6 @@ class ImporterTest extends TestCase
         // Should handle international characters correctly with mb_strtolower
         $this->assertTrue(true);
     }
-
 
     public function test_it_handles_local_assets_without_temp_download(): void
     {
@@ -312,7 +294,6 @@ class ImporterTest extends TestCase
         // If we get here without errors, local file was read successfully
         $this->assertInstanceOf(Importer::class, $importer);
     }
-
 
     public function test_it_downloads_remote_assets_temporarily(): void
     {
@@ -348,6 +329,7 @@ class ImporterTest extends TestCase
                 $stream = fopen('php://memory', 'r+');
                 fwrite($stream, 'fake remote image content');
                 rewind($stream);
+
                 return $stream;
             });
 
@@ -361,7 +343,6 @@ class ImporterTest extends TestCase
         // If we get here without errors, the remote download logic worked
         $this->assertInstanceOf(Importer::class, $importer);
     }
-
 
     public function test_it_cleans_up_temporary_files_after_processing(): void
     {
@@ -392,16 +373,17 @@ class ImporterTest extends TestCase
                 $stream = fopen('php://memory', 'r+');
                 fwrite($stream, 'fake remote image content');
                 rewind($stream);
+
                 return $stream;
             });
 
         // Get initial temp directory count
         $tempBasePath = sys_get_temp_dir();
-        $tempDirsBefore = glob($tempBasePath . '/temporary_directory_*');
+        $tempDirsBefore = glob($tempBasePath.'/temporary_directory_*');
         $countBefore = count($tempDirsBefore);
 
         // Process the remote asset in a scope
-        (function() use ($asset) {
+        (function () use ($asset) {
             new Importer($asset);
         })();
 
@@ -415,14 +397,13 @@ class ImporterTest extends TestCase
         usleep(10000); // 10ms
 
         // Check that temp directories are cleaned up
-        $tempDirsAfter = glob($tempBasePath . '/temporary_directory_*');
+        $tempDirsAfter = glob($tempBasePath.'/temporary_directory_*');
         $countAfter = count($tempDirsAfter);
 
         // The count should be the same or less (temp dirs should be auto-deleted)
         $this->assertLessThanOrEqual($countBefore, $countAfter,
             'Temporary directories should be cleaned up after processing');
     }
-
 
     public function test_it_handles_streaming_failures_gracefully(): void
     {
@@ -868,7 +849,7 @@ class ImporterTest extends TestCase
         try {
             $importer = new Importer($asset);
             $this->assertInstanceOf(Importer::class, $importer);
-        } catch (\Error | \Exception $e) {
+        } catch (\Error|\Exception $e) {
             // Expected when Imagick extension is not available OR with fake test files
             $message = $e->getMessage();
             $this->assertTrue(
@@ -896,7 +877,7 @@ class ImporterTest extends TestCase
             try {
                 $importer = new Importer($asset);
                 $this->assertInstanceOf(Importer::class, $importer);
-            } catch (\Error | \Exception $e) {
+            } catch (\Error|\Exception $e) {
                 // Expected when Imagick extension is not available OR with fake test files
                 $message = $e->getMessage();
                 $this->assertTrue(
@@ -922,7 +903,7 @@ class ImporterTest extends TestCase
         try {
             $importer = new Importer($asset);
             $this->assertInstanceOf(Importer::class, $importer);
-        } catch (\Error | \Exception $e) {
+        } catch (\Error|\Exception $e) {
             // Expected when Imagick extension is not available OR with fake test files
             $message = $e->getMessage();
             $this->assertTrue(
@@ -953,7 +934,7 @@ class ImporterTest extends TestCase
         try {
             $importer = new Importer($pngAsset);
             $this->assertInstanceOf(Importer::class, $importer);
-        } catch (\Error | \Exception $e) {
+        } catch (\Error|\Exception $e) {
             // Expected when Imagick extension is not available OR with fake test files
             $message = $e->getMessage();
             $this->assertTrue(
@@ -983,7 +964,7 @@ class ImporterTest extends TestCase
         try {
             $importer = new Importer($asset);
             $this->assertInstanceOf(Importer::class, $importer);
-        } catch (\Error | \Exception $e) {
+        } catch (\Error|\Exception $e) {
             // Expected when Imagick extension is not available OR with fake test files
             $message = $e->getMessage();
             $this->assertTrue(
@@ -1010,7 +991,7 @@ class ImporterTest extends TestCase
         try {
             $importer = new Importer($asset);
             $this->assertInstanceOf(Importer::class, $importer);
-        } catch (\Error | \Exception $e) {
+        } catch (\Error|\Exception $e) {
             // Expected when Imagick extension is not available OR with fake test files
             $message = $e->getMessage();
             $this->assertTrue(
@@ -1065,7 +1046,7 @@ class ImporterTest extends TestCase
         try {
             $importer = new Importer($asset);
             $this->assertInstanceOf(Importer::class, $importer);
-        } catch (\Error | \Exception $e) {
+        } catch (\Error|\Exception $e) {
             // Expected when Imagick extension is not available OR with fake test files
             $message = $e->getMessage();
             $this->assertTrue(
@@ -1520,6 +1501,7 @@ class ImporterTest extends TestCase
             $stream = fopen('php://memory', 'r+');
             fwrite($stream, 'fake remote image content');
             rewind($stream);
+
             return $stream;
         });
 
@@ -1590,9 +1572,9 @@ class ImporterTest extends TestCase
             // Asset should not have 'alt' field populated
             $data = $asset->data();
             if ($data instanceof \Illuminate\Support\Collection) {
-                $this->assertFalse($data->has('alt') && !empty($data->get('alt')));
+                $this->assertFalse($data->has('alt') && ! empty($data->get('alt')));
             } else {
-                $this->assertTrue(!isset($data['alt']) || empty($data['alt']));
+                $this->assertTrue(! isset($data['alt']) || empty($data['alt']));
             }
         } catch (\Exception $e) {
             // Expected when exiftool fails
