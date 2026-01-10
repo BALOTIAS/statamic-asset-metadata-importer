@@ -16,7 +16,6 @@ class ImportMetadataJobTest extends TestCase
         Queue::fake();
     }
 
-
     public function test_it_can_be_dispatched(): void
     {
         $container = $this->makeAssetContainer();
@@ -26,7 +25,6 @@ class ImportMetadataJobTest extends TestCase
 
         Queue::assertPushed(ImportMetadataJob::class);
     }
-
 
     public function test_it_uses_configured_queue(): void
     {
@@ -42,7 +40,6 @@ class ImportMetadataJobTest extends TestCase
         });
     }
 
-
     public function test_it_defaults_to_default_queue(): void
     {
         config()->set('statamic.asset-metadata-importer.queue', 'default');
@@ -57,7 +54,6 @@ class ImportMetadataJobTest extends TestCase
         });
     }
 
-
     public function test_it_accepts_asset_in_constructor(): void
     {
         $container = $this->makeAssetContainer();
@@ -67,7 +63,6 @@ class ImportMetadataJobTest extends TestCase
 
         $this->assertEquals($asset, $job->asset);
     }
-
 
     public function test_it_does_not_process_when_no_fields_configured(): void
     {
@@ -86,7 +81,6 @@ class ImportMetadataJobTest extends TestCase
 
         $this->assertTrue(true);
     }
-
 
     public function test_it_processes_when_fields_configured(): void
     {
@@ -120,4 +114,3 @@ class ImportMetadataJobTest extends TestCase
         return tap($container->makeAsset($path))->save();
     }
 }
-

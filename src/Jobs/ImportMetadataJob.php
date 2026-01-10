@@ -20,7 +20,7 @@ class ImportMetadataJob implements ShouldQueue
 
     public function handle(): void
     {
-        if (!config('statamic.asset-metadata-importer.fields')) {
+        if (! config('statamic.asset-metadata-importer.fields')) {
             return;
         }
 
