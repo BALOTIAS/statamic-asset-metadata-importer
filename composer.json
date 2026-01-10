@@ -44,7 +44,7 @@
     "extra": {
         "statamic": {
             "name": "Asset Metadata Importer",
-            "description": "Automatically import and map EXIF/IPTC metadata from images to your Statamic asset fields on upload"
+            "description": "Automatically import and map EXIF/IPTC metadata from assets to your Statamic asset fields on upload"
         },
         "laravel": {
             "providers": [

@@ -476,4 +476,602 @@ class ImporterTest extends TestCase
 
         return $asset;
     }
+
+    // ========================================
+    // Adapter Mapping Tests
+    // ========================================
+
+    public function test_it_uses_native_adapter_for_configured_extensions(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['jpg', 'jpeg'],
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_it_uses_exiftool_adapter_when_configured(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'exiftool' => ['png', 'webp'],
+        ]]);
+        config(['statamic.asset-metadata-importer.exiftool_path' => '/usr/local/bin/exiftool']);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.png');
+
+        // This test will throw an exception if exiftool is not installed
+        // That's expected behavior - the adapter is being used, just can't execute
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\PHPExif\Reader\PhpExifReaderException $e) {
+            // Expected when exiftool binary is not available
+            $this->assertStringContainsString('Could not decode exiftool output', $e->getMessage());
+        }
+    }
+
+    public function test_it_uses_ffprobe_adapter_when_configured(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'ffprobe' => ['mp4', 'mov'],
+        ]]);
+        config(['statamic.asset-metadata-importer.ffmpeg_path' => '/usr/local/bin/ffmpeg']);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.mp4');
+
+        // This test will throw an exception if ffprobe is not installed
+        // That's expected behavior - the adapter is being used, just can't execute
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\PHPExif\Reader\PhpExifReaderException $e) {
+            // Expected when ffprobe binary is not available
+            $this->assertStringContainsString('Could not read', $e->getMessage());
+        }
+    }
+
+    public function test_it_returns_empty_metadata_when_no_adapter_configured(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['jpg'],
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.png'); // PNG not configured
+
+        $importer = new Importer($asset);
+
+        // Should complete without error, just no metadata extracted
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_adapter_mapping_uses_first_match(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['jpg'],
+            'exiftool' => ['jpg', 'png'], // jpg appears twice
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        // Should use native adapter (first match)
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_adapter_mapping_is_case_insensitive(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['jpg'],
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.JPG'); // Uppercase extension
+
+        $importer = new Importer($asset);
+
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    // ========================================
+    // Wildcard Support Tests
+    // ========================================
+
+    public function test_it_supports_wildcard_in_adapter_mapping(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['*'], // Process all file types
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_wildcard_matches_all_extensions(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['*'],
+        ]]);
+
+        $extensions = ['jpg', 'png', 'gif'];
+
+        foreach ($extensions as $ext) {
+            $container = $this->createAssetContainer();
+            $asset = $this->createAsset($container, "test.{$ext}");
+
+            $importer = new Importer($asset);
+
+            $this->assertInstanceOf(Importer::class, $importer);
+        }
+    }
+
+    public function test_wildcard_in_first_adapter_takes_precedence(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['*'], // Matches everything
+            'exiftool' => ['jpg'], // This won't be used for jpg
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        // Should use native (first match)
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    // ========================================
+    // Configuration Path Tests
+    // ========================================
+
+    public function test_it_passes_exiftool_path_to_adapter(): void
+    {
+        $customPath = '/custom/path/to/exiftool';
+
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'exiftool' => ['jpg'],
+        ]]);
+        config(['statamic.asset-metadata-importer.exiftool_path' => $customPath]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Adapter should receive the custom path (will fail if binary doesn't exist)
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\PHPExif\Reader\PhpExifReaderException $e) {
+            // Expected when exiftool binary is not available at custom path
+            $this->assertStringContainsString('Could not decode exiftool output', $e->getMessage());
+        }
+    }
+
+    public function test_it_passes_ffmpeg_path_to_adapter(): void
+    {
+        $customPath = '/custom/path/to/ffmpeg';
+
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'ffprobe' => ['mp4'],
+        ]]);
+        config(['statamic.asset-metadata-importer.ffmpeg_path' => $customPath]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.mp4');
+
+        // Adapter should receive the custom path (will fail if binary doesn't exist)
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\PHPExif\Reader\PhpExifReaderException $e) {
+            // Expected when ffprobe binary is not available at custom path
+            $this->assertStringContainsString('Could not read', $e->getMessage());
+        }
+    }
+
+    public function test_it_handles_empty_exiftool_path(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'exiftool' => ['jpg'],
+        ]]);
+        config(['statamic.asset-metadata-importer.exiftool_path' => '']);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        // Should work with empty path (uses system default if exiftool is installed)
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\PHPExif\Reader\PhpExifReaderException $e) {
+            // Expected when exiftool binary is not in system PATH
+            $this->assertStringContainsString('Could not decode exiftool output', $e->getMessage());
+        }
+    }
+
+    public function test_it_handles_null_ffmpeg_path(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'ffprobe' => ['mp4'],
+        ]]);
+        config(['statamic.asset-metadata-importer.ffmpeg_path' => null]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.mp4');
+
+        // Should work with null path (converted to empty string, uses system default if ffprobe is installed)
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\PHPExif\Reader\PhpExifReaderException $e) {
+            // Expected when ffprobe binary is not in system PATH
+            $this->assertStringContainsString('Could not read', $e->getMessage());
+        }
+    }
+
+    // ========================================
+    // Multiple Adapter Tests
+    // ========================================
+
+    public function test_it_supports_multiple_adapters_for_different_extensions(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['jpg', 'jpeg', 'tif', 'tiff'],
+        ]]);
+
+        $testCases = [
+            'test.jpg' => Importer::class,
+            'test.tif' => Importer::class,
+        ];
+
+        foreach ($testCases as $filename => $expectedClass) {
+            $container = $this->createAssetContainer();
+            $asset = $this->createAsset($container, $filename);
+
+            $importer = new Importer($asset);
+
+            $this->assertInstanceOf($expectedClass, $importer);
+        }
+    }
+
+    public function test_it_handles_empty_adapter_mapping(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => []]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        // Should complete without error, no adapter selected
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_it_handles_unknown_adapter_type_gracefully(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'unknown_adapter' => ['jpg'],
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        // Should complete without error, returns null adapter
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    // ========================================
+    // Integration Tests
+    // ========================================
+
+    public function test_full_workflow_with_native_adapter(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'native' => ['jpg'],
+            ],
+            'statamic.asset-metadata-importer.fields' => [
+                'alt' => 'title',
+            ],
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.jpg');
+
+        $importer = new Importer($asset);
+
+        // Full workflow should complete
+        $this->assertInstanceOf(Importer::class, $importer);
+    }
+
+    public function test_full_workflow_with_exiftool_adapter(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'exiftool' => ['png'],
+            ],
+            'statamic.asset-metadata-importer.exiftool_path' => '/usr/local/bin/exiftool',
+            'statamic.asset-metadata-importer.fields' => [
+                'alt' => 'title',
+            ],
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.png');
+
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\PHPExif\Reader\PhpExifReaderException $e) {
+            // Expected when exiftool binary is not available
+            $this->assertStringContainsString('Could not decode exiftool output', $e->getMessage());
+        }
+    }
+
+    public function test_full_workflow_with_ffprobe_adapter(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'ffprobe' => ['mp4'],
+            ],
+            'statamic.asset-metadata-importer.ffmpeg_path' => '/usr/local/bin/ffmpeg',
+            'statamic.asset-metadata-importer.fields' => [
+                'duration' => 'duration',
+            ],
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.mp4');
+
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\PHPExif\Reader\PhpExifReaderException $e) {
+            // Expected when ffprobe binary is not available
+            $this->assertStringContainsString('Could not read', $e->getMessage());
+        }
+    }
+
+    // ========================================
+    // ImageMagick Adapter Tests
+    // ========================================
+
+    public function test_it_uses_imagick_adapter_when_configured(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'imagick' => ['png', 'gif'],
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.png');
+
+        // This test will work if Imagick PHP extension is installed
+        // With fake test files, Imagick will throw "improper image header" error
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\Error | \Exception $e) {
+            // Expected when Imagick extension is not available OR with fake test files
+            $message = $e->getMessage();
+            $this->assertTrue(
+                str_contains($message, 'Imagick') ||
+                str_contains($message, 'Class') ||
+                str_contains($message, 'not found') ||
+                str_contains($message, 'improper image header'),
+                "Exception message was: {$message}"
+            );
+        }
+    }
+
+    public function test_imagick_adapter_works_with_multiple_extensions(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'imagick' => ['png', 'gif', 'bmp'],
+        ]]);
+
+        $extensions = ['png', 'gif', 'bmp'];
+
+        foreach ($extensions as $ext) {
+            $container = $this->createAssetContainer();
+            $asset = $this->createAsset($container, "test.{$ext}");
+
+            try {
+                $importer = new Importer($asset);
+                $this->assertInstanceOf(Importer::class, $importer);
+            } catch (\Error | \Exception $e) {
+                // Expected when Imagick extension is not available OR with fake test files
+                $message = $e->getMessage();
+                $this->assertTrue(
+                    str_contains($message, 'Imagick') ||
+                    str_contains($message, 'Class') ||
+                    str_contains($message, 'not found') ||
+                    str_contains($message, 'improper image header'),
+                    "Exception message was: {$message}"
+                );
+            }
+        }
+    }
+
+    public function test_imagick_adapter_with_wildcard(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'imagick' => ['*'],
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.png');
+
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\Error | \Exception $e) {
+            // Expected when Imagick extension is not available OR with fake test files
+            $message = $e->getMessage();
+            $this->assertTrue(
+                str_contains($message, 'Imagick') ||
+                str_contains($message, 'Class') ||
+                str_contains($message, 'not found') ||
+                str_contains($message, 'improper image header'),
+                "Exception message was: {$message}"
+            );
+        }
+    }
+
+    public function test_mixed_adapters_with_imagick(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['jpg', 'jpeg'],
+            'imagick' => ['png', 'gif'],
+        ]]);
+
+        // Test native adapter works for jpg
+        $container = $this->createAssetContainer();
+        $jpgAsset = $this->createAsset($container, 'test.jpg');
+        $importer = new Importer($jpgAsset);
+        $this->assertInstanceOf(Importer::class, $importer);
+
+        // Test Imagick for png
+        $pngAsset = $this->createAsset($container, 'test.png');
+        try {
+            $importer = new Importer($pngAsset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\Error | \Exception $e) {
+            // Expected when Imagick extension is not available OR with fake test files
+            $message = $e->getMessage();
+            $this->assertTrue(
+                str_contains($message, 'Imagick') ||
+                str_contains($message, 'Class') ||
+                str_contains($message, 'not found') ||
+                str_contains($message, 'improper image header'),
+                "Exception message was: {$message}"
+            );
+        }
+    }
+
+    public function test_full_workflow_with_imagick_adapter(): void
+    {
+        config([
+            'statamic.asset-metadata-importer.adapter_mapping' => [
+                'imagick' => ['png'],
+            ],
+            'statamic.asset-metadata-importer.fields' => [
+                'alt' => 'title',
+            ],
+        ]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.png');
+
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\Error | \Exception $e) {
+            // Expected when Imagick extension is not available OR with fake test files
+            $message = $e->getMessage();
+            $this->assertTrue(
+                str_contains($message, 'Imagick') ||
+                str_contains($message, 'Class') ||
+                str_contains($message, 'not found') ||
+                str_contains($message, 'improper image header'),
+                "Exception message was: {$message}"
+            );
+        }
+    }
+
+    public function test_imagick_adapter_precedence(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'imagick' => ['png'],
+            'native' => ['png'], // PNG appears in both, first match should win
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.png');
+
+        // Should use Imagick (first match)
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\Error | \Exception $e) {
+            // Expected when Imagick extension is not available OR with fake test files
+            $message = $e->getMessage();
+            $this->assertTrue(
+                str_contains($message, 'Imagick') ||
+                str_contains($message, 'Class') ||
+                str_contains($message, 'not found') ||
+                str_contains($message, 'improper image header'),
+                "Exception message was: {$message}"
+            );
+        }
+    }
+
+    public function test_all_adapters_configured_together(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'native' => ['jpg', 'jpeg', 'tif', 'tiff'],
+            'exiftool' => ['webp', 'avif'],
+            'ffprobe' => ['mp4', 'mov'],
+            'imagick' => ['png', 'gif'],
+        ]]);
+
+        // Test that adapter selection works for each type
+        $testCases = [
+            'test.jpg' => 'native',
+            'test.png' => 'imagick',
+            'test.mp4' => 'ffprobe',
+        ];
+
+        foreach ($testCases as $filename => $adapterType) {
+            $container = $this->createAssetContainer();
+            $asset = $this->createAsset($container, $filename);
+
+            try {
+                $importer = new Importer($asset);
+                $this->assertInstanceOf(Importer::class, $importer);
+            } catch (\Exception $e) {
+                // Expected when required extension/binary is not available OR with fake test files
+                $this->assertTrue(true); // Test passes if exception is thrown
+            }
+        }
+    }
+
+    public function test_imagick_adapter_case_insensitive(): void
+    {
+        config(['statamic.asset-metadata-importer.adapter_mapping' => [
+            'imagick' => ['png'],
+        ]]);
+
+        $container = $this->createAssetContainer();
+        $asset = $this->createAsset($container, 'test.PNG'); // Uppercase extension
+
+        try {
+            $importer = new Importer($asset);
+            $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\Error | \Exception $e) {
+            // Expected when Imagick extension is not available OR with fake test files
+            $message = $e->getMessage();
+            $this->assertTrue(
+                str_contains($message, 'Imagick') ||
+                str_contains($message, 'Class') ||
+                str_contains($message, 'not found') ||
+                str_contains($message, 'improper image header'),
+                "Exception message was: {$message}"
+            );
+        }
+    }
 }

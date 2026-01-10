@@ -162,6 +162,77 @@ class AssetUploadedListenerTest extends TestCase
         Queue::assertPushed(ImportMetadataJob::class);
     }
 
+    // ========================================
+    // Wildcard Extension Tests
+    // ========================================
+
+    public function test_it_dispatches_job_for_wildcard_extension(): void
+    {
+        config()->set('statamic.asset-metadata-importer.extensions', ['*']);
+
+        $container = $this->makeAssetContainer();
+        $asset = $this->makeAsset($container, 'test-file.xyz'); // Any extension
+
+        $event = new AssetUploaded($asset, 'test-file.xyz');
+        $listener = new AssetUploadedListener();
+
+        $listener->handle($event);
+
+        Queue::assertPushed(ImportMetadataJob::class);
+    }
+
+    public function test_wildcard_allows_all_extensions(): void
+    {
+        config()->set('statamic.asset-metadata-importer.extensions', ['*']);
+
+        $extensions = ['jpg', 'png', 'mp4', 'pdf', 'doc', 'xyz'];
+
+        foreach ($extensions as $ext) {
+            Queue::fake(); // Reset queue for each test
+
+            $container = $this->makeAssetContainer();
+            $asset = $this->makeAsset($container, "test.{$ext}");
+
+            $event = new AssetUploaded($asset, "test.{$ext}");
+            $listener = new AssetUploadedListener();
+
+            $listener->handle($event);
+
+            Queue::assertPushed(ImportMetadataJob::class);
+        }
+    }
+
+    public function test_wildcard_mixed_with_specific_extensions(): void
+    {
+        // When wildcard is present, it should match everything
+        config()->set('statamic.asset-metadata-importer.extensions', ['jpg', '*', 'png']);
+
+        $container = $this->makeAssetContainer();
+        $asset = $this->makeAsset($container, 'test-file.pdf');
+
+        $event = new AssetUploaded($asset, 'test-file.pdf');
+        $listener = new AssetUploadedListener();
+
+        $listener->handle($event);
+
+        Queue::assertPushed(ImportMetadataJob::class);
+    }
+
+    public function test_wildcard_with_uppercase_extension(): void
+    {
+        config()->set('statamic.asset-metadata-importer.extensions', ['*']);
+
+        $container = $this->makeAssetContainer();
+        $asset = $this->makeAsset($container, 'test-file.PDF');
+
+        $event = new AssetUploaded($asset, 'test-file.PDF');
+        $listener = new AssetUploadedListener();
+
+        $listener->handle($event);
+
+        Queue::assertPushed(ImportMetadataJob::class);
+    }
+
     protected function makeAssetContainer()
     {
         Storage::fake('assets');

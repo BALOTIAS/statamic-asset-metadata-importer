@@ -6,8 +6,10 @@ use Illuminate\Support\Facades\Log;
 use Statamic\Assets\Asset;
 use Spatie\TemporaryDirectory\TemporaryDirectory;
 use PHPExif\Adapter\Exiftool as ExiftoolAdapter;
+use PHPExif\Adapter\FFprobe as FFprobeAdapter;
+use PHPExif\Adapter\ImageMagick as ImageMagickAdapter;
+use PHPExif\Adapter\Native as NativeAdapter;
 use PHPExif\Reader\Reader as MetadataReader;
-use PHPExif\Enum\ReaderType;
 
 class Importer
 {
@@ -55,14 +57,19 @@ class Importer
 
     private function readFileMetadata(string $filePath): array
     {
-        if (config('statamic.asset-metadata-importer.exiftool_path')) {
-            $adapter = new ExiftoolAdapter(['toolPath'  => config('statamic.asset-metadata-importer.exiftool_path')]);
-            $reader = new MetadataReader($adapter);
-        } else {
-            $reader = MetadataReader::factory(ReaderType::NATIVE);
+        $adapter = $this->getAdapterForFile($filePath);
+
+        if (!$adapter) {
+            $this->log('No adapter configured for file type', $filePath);
+            return [
+                'data' => [],
+                'rawData' => [],
+            ];
         }
 
+        $reader = new MetadataReader($adapter);
         $exifMetadata = $reader->read($filePath);
+
         // If no metadata found, return empty arrays - prevents errors, indicating no metadata or unsupported file type
         if (!$exifMetadata) {
             $this->log('Metadata not found or unsupported file type!', $filePath);
@@ -76,6 +83,38 @@ class Importer
             'data' => $exifMetadata->getData(),
             'rawData' => $exifMetadata->getRawData(),
         ];
+    }
+
+    private function getAdapterForFile(string $filePath): ?object
+    {
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $adapterMapping = config('statamic.asset-metadata-importer.adapter_mapping', []);
+
+        foreach ($adapterMapping as $adapterType => $extensions) {
+            // Check if wildcard is used or if extension matches
+            if (in_array('*', $extensions) || in_array($extension, $extensions)) {
+                return $this->createAdapter($adapterType);
+            }
+        }
+
+        return null;
+    }
+
+    private function createAdapter(string $adapterType): ?object
+    {
+        return match($adapterType) {
+            'native' => new NativeAdapter(),
+            'exiftool' => new ExiftoolAdapter(
+                [],
+                config('statamic.asset-metadata-importer.exiftool_path', '') ?? ''
+            ),
+            'ffprobe' => new FFprobeAdapter(
+                [],
+                config('statamic.asset-metadata-importer.ffmpeg_path', '') ?? ''
+            ),
+            'imagick' => new ImageMagickAdapter(),
+            default => null,
+        };
     }
 
     public function mapToAssetField(): void

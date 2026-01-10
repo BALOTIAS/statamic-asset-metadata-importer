@@ -212,6 +212,81 @@ class AssetReuploadedListenerTest extends TestCase
         Queue::assertPushed(ImportMetadataJob::class);
     }
 
+    // ========================================
+    // Wildcard Extension Tests
+    // ========================================
+
+    public function test_it_dispatches_job_for_wildcard_extension_on_reupload(): void
+    {
+        config()->set('statamic.asset-metadata-importer.extensions', ['*']);
+        config()->set('statamic.asset-metadata-importer.overwrite_on_reupload', true);
+
+        $container = $this->makeAssetContainer();
+        $asset = $this->makeAsset($container, 'test-file.xyz');
+
+        $event = new AssetReuploaded($asset, 'test-file.xyz');
+        $listener = new AssetReuploadedListener();
+
+        $listener->handle($event);
+
+        Queue::assertPushed(ImportMetadataJob::class);
+    }
+
+    public function test_wildcard_allows_all_extensions_on_reupload(): void
+    {
+        config()->set('statamic.asset-metadata-importer.extensions', ['*']);
+        config()->set('statamic.asset-metadata-importer.overwrite_on_reupload', true);
+
+        $extensions = ['jpg', 'png', 'mp4', 'pdf', 'doc'];
+
+        foreach ($extensions as $ext) {
+            Queue::fake();
+
+            $container = $this->makeAssetContainer();
+            $asset = $this->makeAsset($container, "test.{$ext}");
+
+            $event = new AssetReuploaded($asset, "test.{$ext}");
+            $listener = new AssetReuploadedListener();
+
+            $listener->handle($event);
+
+            Queue::assertPushed(ImportMetadataJob::class);
+        }
+    }
+
+    public function test_wildcard_respects_overwrite_setting(): void
+    {
+        config()->set('statamic.asset-metadata-importer.extensions', ['*']);
+        config()->set('statamic.asset-metadata-importer.overwrite_on_reupload', false);
+
+        $container = $this->makeAssetContainer();
+        $asset = $this->makeAsset($container, 'test-file.jpg');
+
+        $event = new AssetReuploaded($asset, 'test-file.jpg');
+        $listener = new AssetReuploadedListener();
+
+        $listener->handle($event);
+
+        Queue::assertNotPushed(ImportMetadataJob::class);
+    }
+
+    public function test_wildcard_mixed_with_specific_extensions_on_reupload(): void
+    {
+        // When wildcard is present, it should match everything
+        config()->set('statamic.asset-metadata-importer.extensions', ['jpg', '*', 'png']);
+        config()->set('statamic.asset-metadata-importer.overwrite_on_reupload', true);
+
+        $container = $this->makeAssetContainer();
+        $asset = $this->makeAsset($container, 'test-file.pdf');
+
+        $event = new AssetReuploaded($asset, 'test-file.pdf');
+        $listener = new AssetReuploadedListener();
+
+        $listener->handle($event);
+
+        Queue::assertPushed(ImportMetadataJob::class);
+    }
+
     protected function makeAssetContainer()
     {
         Storage::fake('assets');

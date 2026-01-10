@@ -78,9 +78,12 @@ return [
 
     'extensions' => [
         'jpg', 'jpeg', 'tif', 'tiff',
-        # NOTE: To support PNG, WEBP, and AVIF, you must provide the exiftool binary, see below.
-        # Exiftool supports many more formats, see: https://exiftool.org/#supported
-        # 'png', 'webp', 'avif'
+        // Add more extensions if needed - you may need to configure Exiftool and/or FFMpeg paths as well,
+        // and adjust adapter mapping.
+        // 'png', 'webp', 'avif', 'mp4', 'mov',
+
+        // Use '*' to support all extensions - requires Exiftool and/or FFMpeg configuration
+        // '*',
     ],
 
     /*
@@ -95,6 +98,39 @@ return [
      */
 
     'exiftool_path' => env('ASSET_METADATA_IMPORTER_EXIFTOOL_PATH', null), // e.g. '/usr/local/bin/exiftool', 'C:\\exiftool\\exiftool.exe'
+
+    /*
+    |--------------------------------------------------------------------------
+    | FFMpeg
+    |--------------------------------------------------------------------------
+    |
+    | If you want to extract metadata from video files using ffmpeg, you need to provide the
+    | path to the ffmpeg binary.
+    | See: https://ffmpeg.org/
+    |
+     */
+
+    'ffmpeg_path' => env('ASSET_METADATA_IMPORTER_FFMPEG_PATH', null), // e.g. '/usr/local/bin/ffmpeg', 'C:\\ffmpeg\\bin\\ffmpeg.exe'
+
+    /*
+    |--------------------------------------------------------------------------
+    | Adapter Mapping
+    |--------------------------------------------------------------------------
+    |
+    | Define file extensions to use specific metadata adapters.
+    | Supported adapters: 'native' (PHPExif Native), 'exiftool' (PHPExif Exiftool), 'ffprobe' (PHPExif FFprobe), 'imagick' (PHPExif ImageMagick)
+    | Comment out adapters you don't want to use.
+    |
+    | Example: 'native' => ['jpg', 'jpeg'], 'exiftool' => ['png', 'webp'], 'ffprobe' => ['mp4', 'mov'], 'imagick' => ['gif']
+    |
+     */
+    'adapter_mapping' => [
+        'native' => ['jpg', 'jpeg', 'tif', 'tiff'], // Use native PHPExif for common image formats - supports only jpg, jpeg, tif, tiff
+        // 'exiftool' => ['*'], // Use exiftool for all formats
+        // 'exiftool' => ['jpg', 'jpeg', 'tif', 'tiff', 'png', 'webp', 'avif'], // Use exiftool for certain image formats
+        // 'ffprobe' => ['mp4', 'mov', 'avi', 'mkv'], // Use ffprobe for video files
+        // 'imagick' => ['png', 'gif'], // Use ImageMagick adapter for certain formats (less reliable)
+    ],
 
     /*
     |--------------------------------------------------------------------------
