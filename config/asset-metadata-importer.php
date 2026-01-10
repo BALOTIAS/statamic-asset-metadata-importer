@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'debug' => env('ASSET_METADATA_IMPORTER_DEBUG', env('APP_DEBUG', false)),
+    'debug' => env('ASSET_METADATA_IMPORTER_DEBUG', false),
 
     /*
     |--------------------------------------------------------------------------
