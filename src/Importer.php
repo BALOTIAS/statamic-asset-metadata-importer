@@ -57,9 +57,9 @@ class Importer
 
     private function readFileMetadata(string $filePath): array
     {
-        $adapter = $this->getAdapterForFile($filePath);
+        $adapters = $this->getAdaptersForFile($filePath);
 
-        if (!$adapter) {
+        if (empty($adapters)) {
             $this->log('No adapter configured for file type', $filePath);
             return [
                 'data' => [],
@@ -67,37 +67,56 @@ class Importer
             ];
         }
 
-        $reader = new MetadataReader($adapter);
-        $exifMetadata = $reader->read($filePath);
+        // Try each adapter until we get metadata
+        foreach ($adapters as $index => $adapter) {
+            $adapterName = $this->getAdapterName($adapter);
+            $this->log("Trying adapter #{$index}: {$adapterName}", $filePath);
 
-        // If no metadata found, return empty arrays - prevents errors, indicating no metadata or unsupported file type
-        if (!$exifMetadata) {
-            $this->log('Metadata not found or unsupported file type!', $filePath);
-            return [
-                'data' => [],
-                'rawData' => [],
-            ];
+            try {
+                $reader = new MetadataReader($adapter);
+                $exifMetadata = $reader->read($filePath);
+
+                // If metadata found, return it
+                if ($exifMetadata && (!empty($exifMetadata->getData()) || !empty($exifMetadata->getRawData()))) {
+                    $this->log("Metadata found using adapter: {$adapterName}");
+                    return [
+                        'data' => $exifMetadata->getData(),
+                        'rawData' => $exifMetadata->getRawData(),
+                    ];
+                }
+
+                $this->log("No metadata found with adapter: {$adapterName}", $filePath);
+            } catch (\Exception $e) {
+                $this->log("Adapter {$adapterName} failed: {$e->getMessage()}", $filePath);
+                // Continue to next adapter
+            }
         }
 
+        // No adapter found metadata
+        $this->log('Metadata not found with any adapter!', $filePath);
         return [
-            'data' => $exifMetadata->getData(),
-            'rawData' => $exifMetadata->getRawData(),
+            'data' => [],
+            'rawData' => [],
         ];
     }
 
-    private function getAdapterForFile(string $filePath): ?object
+    private function getAdaptersForFile(string $filePath): array
     {
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
         $adapterMapping = config('statamic.asset-metadata-importer.adapter_mapping', []);
+        $adapters = [];
 
         foreach ($adapterMapping as $adapterType => $extensions) {
             // Check if wildcard is used or if extension matches
             if (in_array('*', $extensions) || in_array($extension, $extensions)) {
-                return $this->createAdapter($adapterType);
+                $adapter = $this->createAdapter($adapterType);
+                if ($adapter) {
+                    $adapters[] = $adapter;
+                }
             }
         }
 
-        return null;
+        return $adapters;
     }
 
     private function createAdapter(string $adapterType): ?object
@@ -114,6 +133,17 @@ class Importer
             ),
             'imagick' => new ImageMagickAdapter(),
             default => null,
+        };
+    }
+
+    private function getAdapterName(object $adapter): string
+    {
+        return match(get_class($adapter)) {
+            NativeAdapter::class => 'Native',
+            ExiftoolAdapter::class => 'Exiftool',
+            FFprobeAdapter::class => 'FFprobe',
+            ImageMagickAdapter::class => 'ImageMagick',
+            default => get_class($adapter),
         };
     }
 

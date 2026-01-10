@@ -25,6 +25,19 @@ Configure which adapter to use for which file types:
 ],
 ```
 
+### Multiple Adapter Fallback
+
+You can specify multiple adapters for the same file extension. If the first adapter fails or returns no metadata, the system automatically tries the next adapter. This provides fallback options for better metadata extraction coverage:
+
+```php
+'adapter_mapping' => [
+    'native' => ['jpg'],    // Try native first (fast)
+    'exiftool' => ['jpg'],  // Fallback to exiftool if no metadata found
+],
+```
+
+Adapters are tried in the order they appear in your configuration. Once an adapter successfully returns metadata, the process stops and doesn't try remaining adapters.
+
 ## Available Adapters
 
 ### 1. Native (Default)
@@ -188,7 +201,77 @@ Or mix wildcards with specific extensions:
 ],
 ```
 
-**Important:** The first matching adapter is used, so order matters!
+**Note:** With multiple adapter fallback, adapters are tried in order. The first adapter that matches the file extension is tried first.
+
+## Multiple Adapter Fallback Strategies
+
+### Strategy 1: Fast First, Comprehensive Fallback
+Try a fast adapter first, then fall back to a more comprehensive one if no metadata is found:
+
+```php
+'adapter_mapping' => [
+    'native' => ['jpg', 'jpeg'],   // Try fast native first
+    'exiftool' => ['jpg', 'jpeg'], // Fallback to comprehensive exiftool
+],
+```
+
+### Strategy 2: Mixed Format Coverage
+Use different adapters for the same extension to maximize metadata extraction:
+
+```php
+'adapter_mapping' => [
+    'imagick' => ['png'],   // Try ImageMagick first
+    'exiftool' => ['png'],  // Fallback to Exiftool if needed
+    'native' => ['png'],    // Last resort for PNG
+],
+```
+
+### Strategy 3: Universal Fallback
+Try specific adapters first, then use exiftool as a catch-all:
+
+```php
+'adapter_mapping' => [
+    'native' => ['jpg', 'jpeg', 'tif', 'tiff'],  // Fast for common formats
+    'imagick' => ['png', 'gif'],                  // Imagick for these
+    'ffprobe' => ['mp4', 'mov'],                  // FFprobe for video
+    'exiftool' => ['*'],                          // Exiftool fallback for ALL types
+],
+```
+
+### Strategy 4: Robustness Over Speed
+Prioritize successful metadata extraction over performance:
+
+```php
+'adapter_mapping' => [
+    'exiftool' => ['*'],    // Try exiftool first for everything
+    'native' => ['*'],      // Fallback to native
+    'imagick' => ['*'],     // Last resort: imagick
+],
+```
+
+### How It Works
+
+1. The system identifies all adapters that match the file extension
+2. Adapters are tried **in the order they appear** in your configuration
+3. If an adapter **fails** (throws an exception) or **returns no metadata**, the next adapter is tried
+4. If an adapter **successfully returns metadata** (even if empty arrays), the process **stops**
+5. If **all adapters fail**, an empty metadata array is returned
+
+### Debugging Adapter Fallback
+
+Enable debug mode to see which adapters are being tried:
+
+```php
+'debug' => true,
+```
+
+The log will show:
+```
+[Statamic Metadata Importer] Asset ID ...: Trying adapter #0: Native
+[Statamic Metadata Importer] Asset ID ...: No metadata found with adapter: Native
+[Statamic Metadata Importer] Asset ID ...: Trying adapter #1: Exiftool
+[Statamic Metadata Importer] Asset ID ...: Metadata found using adapter: Exiftool
+```
 
 ## Performance Tips
 

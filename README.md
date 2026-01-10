@@ -16,6 +16,7 @@ This addon automatically extracts metadata from uploaded images, videos and any 
 
 - **Automatic metadata extraction** on asset upload and re-upload
 - **Multiple adapter support** - Choose the right tool for each file type
+- **Multiple adapter fallback** - Try multiple adapters sequentially for better coverage
 - **Video file support** - Extract metadata from MP4, MOV, AVI, and more
 - **Wildcard support** - Process all file types or use pattern matching
 - **Flexible field mapping** - Map any asset field to metadata tags with fallback options
@@ -152,6 +153,16 @@ No manual data entry required! 🎉
     'imagick' => ['gif', 'bmp'],
 ],
 ```
+
+### Multiple Adapter Fallback (NEW)
+```php
+'adapter_mapping' => [
+    'native' => ['jpg'],    // Try native first (fast)
+    'exiftool' => ['jpg'],  // Fallback to exiftool if no metadata
+],
+```
+
+When multiple adapters are configured for the same extension, they are tried sequentially until metadata is found. This provides better coverage and fallback options.
 
 [View full configuration guide →](docs/configuration.md)
 

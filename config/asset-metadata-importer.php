@@ -139,7 +139,10 @@ return [
     | - FFprobe formats: https://www.ffmpeg.org/ffprobe-all.html#File-Formats
     | - ImageMagick formats: https://imagemagick.org/script/formats.php#supported
     |
-    | The first matching adapter is used, so order matters!
+    | Multiple adapters can match the same extension and will be tried in order.
+    | If the first adapter fails or returns no metadata, the next one is tried.
+    | This provides fallback options for better metadata extraction coverage.
+    |
     | Use '*' as a wildcard to match all file types.
     |
      */
