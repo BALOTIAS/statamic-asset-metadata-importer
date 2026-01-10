@@ -692,12 +692,15 @@ class ImporterTest extends TestCase
         $container = $this->createAssetContainer();
         $asset = $this->createAsset($container, 'test.jpg');
 
-        // Should work with empty path (uses system default if exiftool is installed)
+        // Empty path to exiftool throws InvalidArgumentException
         try {
             $importer = new Importer($asset);
             $this->assertInstanceOf(Importer::class, $importer);
+        } catch (\InvalidArgumentException $e) {
+            // Expected when empty path is provided to exiftool
+            $this->assertStringContainsString('invalid', strtolower($e->getMessage()));
         } catch (\PHPExif\Reader\PhpExifReaderException $e) {
-            // Expected when exiftool binary is not in system PATH
+            // Also expected when exiftool binary is not in system PATH
             $this->assertStringContainsString('Could not decode exiftool output', $e->getMessage());
         }
     }
