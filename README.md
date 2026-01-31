@@ -1,6 +1,6 @@
 # Statamic Asset Metadata Importer
 
-[![Latest Version](https://img.shields.io/packagist/v/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![Total Downloads](https://img.shields.io/packagist/dt/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![License](https://img.shields.io/packagist/l/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![Statamic](https://img.shields.io/badge/Statamic-5.0+-FF269E?style=flat-square&logo=statamic)](https://statamic.com) [![Tests](https://github.com/BALOTIAS/statamic-asset-metadata-importer/workflows/Tests/badge.svg)](https://github.com/BALOTIAS/statamic-asset-metadata-importer/actions)
+[![Latest Version](https://img.shields.io/packagist/v/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![Total Downloads](https://img.shields.io/packagist/dt/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![License](https://img.shields.io/packagist/l/balotias/statamic-asset-metadata-importer.svg?style=flat-square)](https://packagist.org/packages/balotias/statamic-asset-metadata-importer) [![Statamic](https://img.shields.io/badge/Statamic-5+_%7C_6+-FF269E?style=flat-square&logo=statamic)](https://statamic.com) [![Tests](https://github.com/BALOTIAS/statamic-asset-metadata-importer/workflows/Tests/badge.svg)](https://github.com/BALOTIAS/statamic-asset-metadata-importer/actions)
 
 ![Statamic Asset Metadata Importer](./statamic-asset-metadata-importer.jpeg)
 
@@ -26,7 +26,7 @@ This addon automatically extracts metadata from uploaded images, videos and any 
 - **29,000+ metadata tags** - Comprehensive support via Exiftool
 
 ## 📋 Requirements
-- Statamic 5.0 or higher
+- Statamic 5 or 6
 - PHP 8.2 - 8.5
 - (Optional) [Exiftool](https://exiftool.org/) for comprehensive format support ⭐ Recommended
 - (Optional) [FFmpeg](https://ffmpeg.org/) for video file support
