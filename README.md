@@ -26,9 +26,8 @@ This addon automatically extracts metadata from uploaded images, videos and any 
 - **29,000+ metadata tags** - Comprehensive support via Exiftool
 
 ## 📋 Requirements
-
 - Statamic 5.0 or higher
-- PHP 8.2 or higher
+- PHP 8.2 - 8.5
 - (Optional) [Exiftool](https://exiftool.org/) for comprehensive format support ⭐ Recommended
 - (Optional) [FFmpeg](https://ffmpeg.org/) for video file support
 - (Optional) PHP Imagick extension
