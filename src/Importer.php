@@ -27,7 +27,25 @@ class Importer
         $this->save();
     }
 
-    public function readMetadata(): void
+    /**
+     * Get the extracted metadata.
+     * @return array
+     */
+    public function getMetadata(): array
+    {
+        return $this->metadata['data'] ?? [];
+    }
+
+    /**
+     * Get the raw extracted metadata.
+     * @return array
+     */
+    public function getRawMetadata(): array
+    {
+        return $this->metadata['rawData'] ?? [];
+    }
+
+    private function readMetadata(): void
     {
         $path = $this->asset->path();
         $resolvedPath = $this->asset->resolvedPath();
@@ -150,7 +168,7 @@ class Importer
         };
     }
 
-    public function mapToAssetField(): void
+    private function mapToAssetField(): void
     {
         $blueprint = $this->asset->container->blueprint();
 
