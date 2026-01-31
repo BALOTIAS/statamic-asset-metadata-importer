@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'debug' => env('ASSET_METADATA_IMPORTER_DEBUG', env('APP_DEBUG', false)),
+    'debug' => env('ASSET_METADATA_IMPORTER_DEBUG', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -25,7 +25,7 @@ return [
     |
     | Example: 'your_field' => ['mapped_php_exif_field', 'raw_php_exif_field']
     |
-    | php-exif mapped fields: https://github.com/PHPExif/php-exif/blob/master/lib/PHPExif/Exif.php
+    | php-exif mapped fields: https://github.com/LycheeOrg/php-exif/blob/v1.0.4/lib/PHPExif/Exif.php
     | NOTE: php-exif DOES NOT ensure that every tag is mapped correctly!
     | For more reliable results on additional formats, consider using Exiftool tags, e.g:
     | 'credit' => ['credit' # mapped value, 'XMP-photoshop:Credit' # raw value]
@@ -78,23 +78,81 @@ return [
 
     'extensions' => [
         'jpg', 'jpeg', 'tif', 'tiff',
-        # NOTE: To support PNG, WEBP, and AVIF, you must provide the exiftool binary, see below.
-        # Exiftool supports many more formats, see: https://exiftool.org/#supported
-        # 'png', 'webp', 'avif'
+        // Add more extensions if needed - you may need to configure Exiftool and/or FFMpeg paths as well,
+        // and adjust adapter mapping.
+        // 'png', 'webp', 'avif', 'mp4', 'mov',
+
+        // Use '*' to support all extensions - requires Exiftool and/or FFMpeg configuration
+        // '*',
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Exiftool
+    | Exiftool (Recommended)
     |--------------------------------------------------------------------------
     |
-    | If you want to support additional image formats like PNG, WEBP, AVIF or more,
-    | you need to provide the path to the exiftool binary.
-    | See: https://exiftool.org/
+    | For comprehensive metadata extraction, we strongly recommend using Exiftool.
+    | It supports 100+ file types and can read/write 29,000+ metadata tags.
+    |
+    | Supported file types: https://exiftool.org/#supported
+    | Supported metadata tags: https://exiftool.org/TagNames/index.html
+    |
+    | Installation:
+    | - macOS: brew install exiftool
+    | - Linux: apt-get install libimage-exiftool-perl
+    | - Windows: Download from https://exiftool.org/
     |
      */
 
     'exiftool_path' => env('ASSET_METADATA_IMPORTER_EXIFTOOL_PATH', null), // e.g. '/usr/local/bin/exiftool', 'C:\\exiftool\\exiftool.exe'
+
+    /*
+    |--------------------------------------------------------------------------
+    | FFMpeg / FFprobe
+    |--------------------------------------------------------------------------
+    |
+    | To extract metadata from video files, provide the path to the FFmpeg binary.
+    | The FFprobe adapter will be used for video file formats.
+    |
+    | Supported file formats: https://www.ffmpeg.org/ffprobe-all.html#File-Formats
+    | See: https://ffmpeg.org/
+    |
+     */
+
+    'ffmpeg_path' => env('ASSET_METADATA_IMPORTER_FFMPEG_PATH', null), // e.g. '/usr/local/bin/ffmpeg', 'C:\\ffmpeg\\bin\\ffmpeg.exe'
+
+    /*
+    |--------------------------------------------------------------------------
+    | Adapter Mapping
+    |--------------------------------------------------------------------------
+    |
+    | Define file extensions to use specific metadata adapters.
+    |
+    | Available adapters:
+    | - 'native'   - Built-in PHP (jpg, jpeg, tif, tiff only)
+    | - 'exiftool' - Exiftool binary (100+ formats, 29k+ tags) ⭐ Recommended
+    | - 'ffprobe'  - FFmpeg/FFprobe (video files)
+    | - 'imagick'  - PHP Imagick extension (200+ formats, less reliable)
+    |
+    | Documentation:
+    | - Exiftool formats: https://exiftool.org/#supported
+    | - FFprobe formats: https://www.ffmpeg.org/ffprobe-all.html#File-Formats
+    | - ImageMagick formats: https://imagemagick.org/script/formats.php#supported
+    |
+    | Multiple adapters can match the same extension and will be tried in order.
+    | If the first adapter fails or returns no metadata, the next one is tried.
+    | This provides fallback options for better metadata extraction coverage.
+    |
+    | Use '*' as a wildcard to match all file types.
+    |
+     */
+    'adapter_mapping' => [
+        'native' => ['jpg', 'jpeg', 'tif', 'tiff'], // Fast, built-in PHP (limited formats)
+        // 'exiftool' => ['*'], // Use exiftool for all formats (recommended)
+        // 'exiftool' => ['png', 'webp', 'avif', 'heic'], // Use exiftool for specific formats
+        // 'ffprobe' => ['mp4', 'mov', 'avi', 'mkv'], // Use ffprobe for video files
+        // 'imagick' => ['png', 'gif', 'bmp'], // Use ImageMagick (requires PHP extension)
+    ],
 
     /*
     |--------------------------------------------------------------------------
