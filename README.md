@@ -185,7 +185,7 @@ MIT License - see [LICENSE.md](LICENSE.md)
 
 ## 🙏 Credits
 
-- Inspired by [Image Metadata Importer](https://statamic.com/addons/heidkaemper/import-image-metadata)
-- Developed by [Balotias](https://github.com/balotias)
+- Inspired by [heidkaemper/statamic-import-image-metadata](https://github.com/heidkaemper/statamic-import-image-metadata)
+- Developed by [balotias](https://github.com/balotias)
 - Powered by [lychee-org/php-exif](https://github.com/LycheeOrg/php-exif)
 
